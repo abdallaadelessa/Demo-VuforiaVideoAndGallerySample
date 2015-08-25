@@ -12,7 +12,7 @@ public class VirtualButtonsUtils {
     // Enumeration for masking button indices into single integer:
     public static final int BUTTON_1 = 1;
     public static final int BUTTON_2 = 2;
-    public static String virtualButtonColors[] = { "moveLeft", "blue", "yellow", "moveRight" };
+    public static String virtualButtonColors[] = {"moveLeft", "moveRight"};
 
     public static Buffer fillBuffer(float[] array) {
         // Convert to floats because OpenGL doesnt work on doubles, and manually
