@@ -325,27 +325,7 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
 
     @Override
     public void onQCARUpdate(State state) {
-        if(updateBtns) {
-            // Update runs in the tracking thread therefore it is guaranteed
-            // that the tracker is
-            // not doing anything at this point. => Reconfiguration is possible.
 
-            ObjectTracker ot = (ObjectTracker) (TrackerManager.getInstance().getTracker(ObjectTracker.getClassType()));
-            ot.deactivateDataSet(mCurrentDataset);
-            Trackable trackable = mCurrentDataset.getTrackable(0);
-            ImageTarget imageTarget = (ImageTarget) (trackable);
-            if((buttonMask & VirtualButtonsUtils.BUTTON_1) != 0) {
-                Log.d(LOGTAG, "Toggle Button 1");
-                toggleVirtualButton(imageTarget, VirtualButtonsUtils.BUTTON_1_NAME, -108.68f, -53.52f, -75.75f, -65.87f);
-            }
-            if((buttonMask & VirtualButtonsUtils.BUTTON_2) != 0) {
-                Log.d(LOGTAG, "Toggle Button 2");
-                toggleVirtualButton(imageTarget, VirtualButtonsUtils.BUTTON_2_NAME, -45.28f, -53.52f, -12.35f, -65.87f);
-            }
-            ot.activateDataSet(mCurrentDataset);
-            buttonMask = 0;
-            updateBtns = false;
-        }
     }
 
     // -------->

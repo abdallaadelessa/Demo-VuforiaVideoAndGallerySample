@@ -12,13 +12,7 @@ public class VirtualButtonsUtils {
     // Enumeration for masking button indices into single integer:
     public static final int BUTTON_1 = 1;
     public static final int BUTTON_2 = 2;
-    public static final String BUTTON_1_NAME = "moveLeft";
-    public static final String BUTTON_2_NAME = "moveRight";
-
-
-    public static int getIndexByName(String name) {
-        return name.equalsIgnoreCase(BUTTON_1_NAME) ? 0 : 1;
-    }
+    public static String virtualButtonColors[] = { "moveLeft", "blue", "yellow", "moveRight" };
 
     public static Buffer fillBuffer(float[] array) {
         // Convert to floats because OpenGL doesnt work on doubles, and manually

@@ -65,6 +65,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
     private int lineColorHandle = 0;
     private int mvpMatrixButtonsHandle = 0;
     private int mCurrentTextureIndex = 0;
+    private int mPreviousTextureIndex;
 
     // -------------------------------------->
 
@@ -195,6 +196,16 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
 
                 Texture thisTexture = mTextures.get(0);//mCurrentTextureIndex
 
+                if(mPreviousTextureIndex != mCurrentTextureIndex) {
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mActivity, "Button Pressed " + mCurrentTextureIndex, 1000).show();
+                        }
+                    });
+                }
+                mPreviousTextureIndex = mCurrentTextureIndex;
+
                 // Render 3D model
                 render3DModel(trackableResult, thisTexture);
             }
@@ -215,28 +226,35 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
 
         ImageTargetResult imageTargetResult = (ImageTargetResult) trackableResult;
 
-        Log.i(LOGTAG, "Num Of Btns : " + imageTargetResult.getNumVirtualButtons());
+        int numVirtualButtons = imageTargetResult.getNumVirtualButtons();
+        Log.i(LOGTAG, "Num Of Btns : " + numVirtualButtons);
 
-        float vbVertices[] = new float[imageTargetResult.getNumVirtualButtons() * 24];
+        float vbVertices[] = new float[numVirtualButtons * 24];
         short vbCounter = 0;
 
         // Iterate through this targets virtual buttons:
-        for(int i = 0; i < imageTargetResult.getNumVirtualButtons(); ++i) {
+        for(int i = 0; i < numVirtualButtons; ++i) {
             VirtualButtonResult buttonResult = imageTargetResult.getVirtualButtonResult(i);
             VirtualButton button = buttonResult.getVirtualButton();
-            int buttonIndex = VirtualButtonsUtils.getIndexByName(button.getName());
+
+            int buttonIndex = 0;
+            // Run through button name array to find button index
+            for(int j = 0; j < numVirtualButtons; ++j) {
+                if(button.getName().compareTo(VirtualButtonsUtils.virtualButtonColors[j]) == 0) {
+                    buttonIndex = j;
+                    break;
+                }
+            }
+
+            // If the button is pressed, than use this texture:
+            if(buttonResult.isPressed()) {
+                mCurrentTextureIndex = buttonIndex + 1;
+            }
 
             // If the button is pressed, than use this texture:
             if(buttonResult.isPressed()) {
                 mCurrentTextureIndex = buttonIndex + 1;
                 Log.i(LOGTAG, "Button Pressed " + mCurrentTextureIndex);
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(mActivity, "Button Pressed " + mCurrentTextureIndex, 1000).show();
-                    }
-                });
-
             }
 
             Rectangle vbRectangle = (Rectangle) button.getArea();
@@ -288,7 +306,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
             // The reason is that GL_LINES considers only pairs. So some
             // vertices
             // must be repeated.
-            GLES20.glDrawArrays(GLES20.GL_LINES, 0, imageTargetResult.getNumVirtualButtons() * 8);
+            GLES20.glDrawArrays(GLES20.GL_LINES, 0, numVirtualButtons * 8);
 
             SampleUtils.checkGLError("VirtualButtons drawButton");
 
@@ -306,7 +324,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
 
         // Matrix
         float[] modelViewProjection = new float[16];
-        Matrix.scaleM(modelViewMatrix, 0, objectSize[0] / 2, objectSize[1] / 2, objectSize[2] / 2);
+        Matrix.scaleM(modelViewMatrix, 0, objectSize[0] / 2, objectSize[1] / 4, objectSize[2] / 2);
         Matrix.multiplyMM(modelViewProjection, 0, vuforiaAppSession.getProjectionMatrix().getData(), 0, modelViewMatrix, 0);
 
         // Render 3D model

@@ -7,8 +7,6 @@ and other countries. Trademarks of QUALCOMM Incorporated are used with permissio
 
 package com.qualcomm.vuforia.samples.VuforiaSamples.app.VirtualButtons;
 
-import java.util.Vector;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -30,9 +28,8 @@ import com.qualcomm.vuforia.DataSet;
 import com.qualcomm.vuforia.ImageTarget;
 import com.qualcomm.vuforia.ObjectTracker;
 import com.qualcomm.vuforia.Rectangle;
-import com.qualcomm.vuforia.State;
 import com.qualcomm.vuforia.STORAGE_TYPE;
-import com.qualcomm.vuforia.Trackable;
+import com.qualcomm.vuforia.State;
 import com.qualcomm.vuforia.Tracker;
 import com.qualcomm.vuforia.TrackerManager;
 import com.qualcomm.vuforia.VirtualButton;
@@ -47,6 +44,8 @@ import com.qualcomm.vuforia.samples.VuforiaSamples.R;
 import com.qualcomm.vuforia.samples.VuforiaSamples.ui.SampleAppMenu.SampleAppMenu;
 import com.qualcomm.vuforia.samples.VuforiaSamples.ui.SampleAppMenu.SampleAppMenuGroup;
 import com.qualcomm.vuforia.samples.VuforiaSamples.ui.SampleAppMenu.SampleAppMenuInterface;
+
+import java.util.Vector;
 
 
 // The main activity for the VirtualButtons sample. 
@@ -518,62 +517,62 @@ public class VirtualButtons extends Activity implements
     @Override
     public void onQCARUpdate(State state)
     {
-        if (updateBtns)
-        {
-            // Update runs in the tracking thread therefore it is guaranteed
-            // that the tracker is
-            // not doing anything at this point. => Reconfiguration is possible.
-            
-            ObjectTracker ot = (ObjectTracker) (TrackerManager.getInstance()
-                .getTracker(ObjectTracker.getClassType()));
-            assert (dataSet != null);
-            
-            // Deactivate the data set prior to reconfiguration:
-            ot.deactivateDataSet(dataSet);
-            
-            assert (dataSet.getNumTrackables() > 0);
-            Trackable trackable = dataSet.getTrackable(0);
-            
-            assert (trackable != null);
-            assert (trackable.getType() == ObjectTracker.getClassType());
-            ImageTarget imageTarget = (ImageTarget) (trackable);
-            
-            if ((buttonMask & BUTTON_1) != 0)
-            {
-                Log.d(LOGTAG, "Toggle Button 1");
-                
-                toggleVirtualButton(imageTarget, virtualButtonColors[0],
-                    -108.68f, -53.52f, -75.75f, -65.87f);
-                
-            }
-            if ((buttonMask & BUTTON_2) != 0)
-            {
-                Log.d(LOGTAG, "Toggle Button 2");
-                
-                toggleVirtualButton(imageTarget, virtualButtonColors[1],
-                    -45.28f, -53.52f, -12.35f, -65.87f);
-            }
-            if ((buttonMask & BUTTON_3) != 0)
-            {
-                Log.d(LOGTAG, "Toggle Button 3");
-                
-                toggleVirtualButton(imageTarget, virtualButtonColors[2],
-                    14.82f, -53.52f, 47.75f, -65.87f);
-            }
-            if ((buttonMask & BUTTON_4) != 0)
-            {
-                Log.d(LOGTAG, "Toggle Button 4");
-                
-                toggleVirtualButton(imageTarget, virtualButtonColors[3],
-                    76.57f, -53.52f, 109.50f, -65.87f);
-            }
-            
-            // Reactivate the data set:
-            ot.activateDataSet(dataSet);
-            
-            buttonMask = 0;
-            updateBtns = false;
-        }
+//        if (updateBtns)
+//        {
+//            // Update runs in the tracking thread therefore it is guaranteed
+//            // that the tracker is
+//            // not doing anything at this point. => Reconfiguration is possible.
+//
+//            ObjectTracker ot = (ObjectTracker) (TrackerManager.getInstance()
+//                .getTracker(ObjectTracker.getClassType()));
+//            assert (dataSet != null);
+//
+//            // Deactivate the data set prior to reconfiguration:
+//            ot.deactivateDataSet(dataSet);
+//
+//            assert (dataSet.getNumTrackables() > 0);
+//            Trackable trackable = dataSet.getTrackable(0);
+//
+//            assert (trackable != null);
+//            assert (trackable.getType() == ObjectTracker.getClassType());
+//            ImageTarget imageTarget = (ImageTarget) (trackable);
+//
+//            if ((buttonMask & BUTTON_1) != 0)
+//            {
+//                Log.d(LOGTAG, "Toggle Button 1");
+//
+//                toggleVirtualButton(imageTarget, virtualButtonColors[0],
+//                    -108.68f, -53.52f, -75.75f, -65.87f);
+//
+//            }
+//            if ((buttonMask & BUTTON_2) != 0)
+//            {
+//                Log.d(LOGTAG, "Toggle Button 2");
+//
+//                toggleVirtualButton(imageTarget, virtualButtonColors[1],
+//                    -45.28f, -53.52f, -12.35f, -65.87f);
+//            }
+//            if ((buttonMask & BUTTON_3) != 0)
+//            {
+//                Log.d(LOGTAG, "Toggle Button 3");
+//
+//                toggleVirtualButton(imageTarget, virtualButtonColors[2],
+//                    14.82f, -53.52f, 47.75f, -65.87f);
+//            }
+//            if ((buttonMask & BUTTON_4) != 0)
+//            {
+//                Log.d(LOGTAG, "Toggle Button 4");
+//
+//                toggleVirtualButton(imageTarget, virtualButtonColors[3],
+//                    76.57f, -53.52f, 109.50f, -65.87f);
+//            }
+//
+//            // Reactivate the data set:
+//            ot.activateDataSet(dataSet);
+//
+//            buttonMask = 0;
+//            updateBtns = false;
+//        }
     }
     
     
