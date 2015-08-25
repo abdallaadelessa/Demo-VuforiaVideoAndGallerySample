@@ -33,12 +33,15 @@ import android.widget.Toast;
 
 import com.qualcomm.vuforia.CameraDevice;
 import com.qualcomm.vuforia.DataSet;
+import com.qualcomm.vuforia.ImageTarget;
 import com.qualcomm.vuforia.ObjectTracker;
+import com.qualcomm.vuforia.Rectangle;
 import com.qualcomm.vuforia.State;
 import com.qualcomm.vuforia.STORAGE_TYPE;
 import com.qualcomm.vuforia.Trackable;
 import com.qualcomm.vuforia.Tracker;
 import com.qualcomm.vuforia.TrackerManager;
+import com.qualcomm.vuforia.VirtualButton;
 import com.qualcomm.vuforia.Vuforia;
 import com.qualcomm.vuforia.samples.SampleApplication.SampleApplicationControl;
 import com.qualcomm.vuforia.samples.SampleApplication.SampleApplicationException;
@@ -56,628 +59,600 @@ import com.qualcomm.vuforia.samples.moselay.viewToGlRenderer.ViewToGLRenderer;
 import com.qualcomm.vuforia.samples.moselay.viewToGlRenderer.cuberenerer.CubeGLRenderer;
 
 
-public class ObjectTargets extends Activity implements SampleApplicationControl,
-    SampleAppMenuInterface
-{
+public class ObjectTargets extends Activity implements SampleApplicationControl, SampleAppMenuInterface {
     private static final String LOGTAG = "ObjectRecognition";
-    
+
     SampleApplicationSession vuforiaAppSession;
-    
+
     private DataSet mCurrentDataset;
-    
+
     // Our OpenGL view:
     private SampleApplicationGLView mGlView;
-    
+
     // Our renderer:
     private ObjectTargetRenderer mRenderer;
-    
+
     // The textures we will use for rendering:
     private Vector<Texture> mTextures;
-    
+
     private GestureDetector mGestureDetector;
-    
+
     private boolean mFlash = false;
     private boolean mExtendedTracking = false;
-    
+
     private View mFlashOptionView;
-    
+
     private RelativeLayout mUILayout;
-    
+
     private SampleAppMenu mSampleAppMenu;
-    
+
     public LoadingDialogHandler loadingDialogHandler = new LoadingDialogHandler(this);
-    
+
     // Alert Dialog used to display SDK errors
     private AlertDialog mErrorDialog;
-    
+
     boolean mIsDroidDevice = false;
-    
-    
+    //--->
+    // Virtual Button runtime creation:
+    private boolean updateBtns = false;
+    // Enumeration for masking button indices into single integer:
+    private static final int BUTTON_1 = 1;
+    private static final int BUTTON_2 = 2;
+    private static final String BUTTON_1_NAME = "Left";
+    private static final String BUTTON_2_NAME = "Right";
+    private byte buttonMask = 0;
+    static final int NUM_BUTTONS = 2;
+
+
+    // ---------------------------->
+
     // Called when the activity first starts or the user navigates back to an
     // activity.
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         Log.d(LOGTAG, "onCreate");
         super.onCreate(savedInstanceState);
-        
+
         vuforiaAppSession = new SampleApplicationSession(this);
-        
+
         startLoadingAnimation();
-        
-        vuforiaAppSession
-            .initAR(this, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        
+
+        vuforiaAppSession.initAR(this, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
         // Load any sample specific textures:
         mTextures = new Vector<Texture>();
         loadTextures();
-        
+
         mGestureDetector = new GestureDetector(this, new GestureListener());
-        
-        mIsDroidDevice = Build.MODEL.toLowerCase().startsWith(
-            "droid");
-        
+
+        mIsDroidDevice = Build.MODEL.toLowerCase().startsWith("droid");
+
     }
-    
-    
-    // We want to load specific textures from the APK, which we will later use
-    // for rendering.
-    private void loadTextures()
-    {
-        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/CubeWireframe.png", getAssets()));
-    }
-    
-    
-    // Process Single Tap event to trigger autofocus
-    private class GestureListener extends
-        GestureDetector.SimpleOnGestureListener
-    {
-        // Used to set autofocus one second after a manual focus is triggered
-        private final Handler autofocusHandler = new Handler();
-        
-        
-        @Override
-        public boolean onDown(MotionEvent e)
-        {
-            return true;
-        }
-        
-        
-        @Override
-        public boolean onSingleTapUp(MotionEvent e)
-        {
-            // Generates a Handler to trigger autofocus
-            // after 1 second
-            autofocusHandler.postDelayed(new Runnable()
-            {
-                public void run()
-                {
-                    boolean result = CameraDevice.getInstance().setFocusMode(
-                        CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);
-                    
-                    if (!result)
-                        Log.e("SingleTapUp", "Unable to trigger focus");
-                }
-            }, 1000L);
-            
-            return true;
-        }
-    }
-    
-    
+
     // Called when the activity will start interacting with the user.
     @Override
-    protected void onResume()
-    {
+    protected void onResume() {
         Log.d(LOGTAG, "onResume");
         super.onResume();
-        
+
         // This is needed for some Droid devices to force portrait
-        if (mIsDroidDevice)
-        {
+        if(mIsDroidDevice) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
-        
-        try
-        {
+
+        try {
             vuforiaAppSession.resumeAR();
-        } catch (SampleApplicationException e)
-        {
+        }
+        catch(SampleApplicationException e) {
             Log.e(LOGTAG, e.getString());
         }
-        
+
         // Resume the GL view:
-        if (mGlView != null)
-        {
+        if(mGlView != null) {
             mGlView.setVisibility(View.VISIBLE);
             mGlView.onResume();
         }
-        
+
     }
-    
-    
+
+
     // Callback for configuration changes the activity handles itself
     @Override
-    public void onConfigurationChanged(Configuration config)
-    {
+    public void onConfigurationChanged(Configuration config) {
         Log.d(LOGTAG, "onConfigurationChanged");
         super.onConfigurationChanged(config);
-        
+
         vuforiaAppSession.onConfigurationChanged();
     }
-    
-    
+
+
     // Called when the system is about to start resuming a previous activity.
     @Override
-    protected void onPause()
-    {
+    protected void onPause() {
         Log.d(LOGTAG, "onPause");
         super.onPause();
-        
-        if (mGlView != null)
-        {
+
+        if(mGlView != null) {
             mGlView.setVisibility(View.INVISIBLE);
             mGlView.onPause();
         }
-        
+
         // Turn off the flash
-        if (mFlashOptionView != null && mFlash)
-        {
+        if(mFlashOptionView != null && mFlash) {
             // OnCheckedChangeListener is called upon changing the checked state
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
-            {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                 ((Switch) mFlashOptionView).setChecked(false);
-            } else
-            {
+            }
+            else {
                 ((CheckBox) mFlashOptionView).setChecked(false);
             }
         }
-        
-        try
-        {
+
+        try {
             vuforiaAppSession.pauseAR();
-        } catch (SampleApplicationException e)
-        {
+        }
+        catch(SampleApplicationException e) {
             Log.e(LOGTAG, e.getString());
         }
     }
-    
-    
+
+
     // The final call you receive before your activity is destroyed.
     @Override
-    protected void onDestroy()
-    {
+    protected void onDestroy() {
         Log.d(LOGTAG, "onDestroy");
         super.onDestroy();
-        
-        try
-        {
+
+        try {
             vuforiaAppSession.stopAR();
-        } catch (SampleApplicationException e)
-        {
+        }
+        catch(SampleApplicationException e) {
             Log.e(LOGTAG, e.getString());
         }
-        
+
         // Unload texture:
         mTextures.clear();
         mTextures = null;
-        
+
         System.gc();
     }
-    
-    
+
+
+    // ----------------------------> Tracker Methods
+
+    // Methods to load and destroy tracking data.
+    @Override
+    public boolean doLoadTrackersData() {
+        TrackerManager tManager = TrackerManager.getInstance();
+        ObjectTracker objectTracker = (ObjectTracker) tManager.getTracker(ObjectTracker.getClassType());
+        if(objectTracker == null) return false;
+
+        if(mCurrentDataset == null) mCurrentDataset = objectTracker.createDataSet();
+
+        if(mCurrentDataset == null) return false;
+
+        if(!mCurrentDataset.load("ObjectRecognition/test.xml", STORAGE_TYPE.STORAGE_APPRESOURCE))
+            return false;
+
+        if(!objectTracker.activateDataSet(mCurrentDataset)) return false;
+
+
+        //Note: Disable Extended Tracking
+        //        int numTrackables = mCurrentDataset.getNumTrackables();
+        //        for (int count = 0; count < numTrackables; count++)
+        //        {
+        //            Trackable trackable = mCurrentDataset.getTrackable(count);
+        //            if(isExtendedTrackingActive())
+        //            {
+        //                trackable.startExtendedTracking();
+        //            }
+        //
+        //            String name = "Current Dataset : " + trackable.getName();
+        //            trackable.setUserData(name);
+        //            Log.d(LOGTAG, "UserData:Set the following user data "
+        //                    + (String) trackable.getUserData());
+        //        }
+
+        return true;
+    }
+
+
+    @Override
+    public boolean doUnloadTrackersData() {
+        // Indicate if the trackers were unloaded correctly
+        boolean result = true;
+
+        TrackerManager tManager = TrackerManager.getInstance();
+        ObjectTracker objectTracker = (ObjectTracker) tManager.getTracker(ObjectTracker.getClassType());
+        if(objectTracker == null) return false;
+
+        if(mCurrentDataset != null && mCurrentDataset.isActive()) {
+            if(objectTracker.getActiveDataSet().equals(mCurrentDataset) && !objectTracker.deactivateDataSet(mCurrentDataset)) {
+                result = false;
+            }
+            else if(!objectTracker.destroyDataSet(mCurrentDataset)) {
+                result = false;
+            }
+
+            mCurrentDataset = null;
+        }
+
+        return result;
+    }
+
+    // -------->
+
+    @Override
+    public void onInitARDone(SampleApplicationException exception) {
+
+        if(exception == null) {
+            initApplicationAR();
+
+            if(mRenderer != null) mRenderer.mIsActive = true;
+
+            // Now add the GL surface view. It is important
+            // that the OpenGL ES surface view gets added
+            // BEFORE the camera is started and video
+            // background is configured.
+            addContentView(mGlView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+
+            // Sets the UILayout to be drawn in front of the camera
+            mUILayout.bringToFront();
+
+            // Sets the layout background to transparent
+            mUILayout.setBackgroundColor(Color.TRANSPARENT);
+
+            try {
+                vuforiaAppSession.startAR(CameraDevice.CAMERA.CAMERA_DEFAULT);
+            }
+            catch(SampleApplicationException e) {
+                Log.e(LOGTAG, e.getString());
+            }
+
+            boolean result = CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
+
+            if(result) Log.e(LOGTAG, "Unable to enable continuous autofocus");
+
+            mSampleAppMenu = new SampleAppMenu(this, this, "Object Reco", mGlView, mUILayout, null);
+            setSampleAppMenuSettings();
+
+        }
+        else {
+            Log.e(LOGTAG, exception.getString());
+            if(exception.getCode() == SampleApplicationException.LOADING_TRACKERS_FAILURE) {
+                showInitializationErrorMessage(getString(R.string.INIT_OBJECT_DATASET_NOT_FOUND_TITLE), getString(R.string.INIT_OBJECT_DATASET_NOT_FOUND));
+
+            }
+            else {
+                showInitializationErrorMessage(getString(R.string.INIT_ERROR), exception.getString());
+            }
+        }
+    }
+
+    @Override
+    public void onQCARUpdate(State state) {
+//        if(updateBtns) {
+//            // Update runs in the tracking thread therefore it is guaranteed
+//            // that the tracker is
+//            // not doing anything at this point. => Reconfiguration is possible.
+//
+//            ObjectTracker ot = (ObjectTracker) (TrackerManager.getInstance().getTracker(ObjectTracker.getClassType()));
+//            assert (mCurrentDataset != null);
+//
+//            // Deactivate the data set prior to reconfiguration:
+//            ot.deactivateDataSet(mCurrentDataset);
+//
+//            assert (mCurrentDataset.getNumTrackables() > 0);
+//            Trackable trackable = mCurrentDataset.getTrackable(0);
+//
+//            assert (trackable != null);
+//            assert (trackable.getType() == ObjectTracker.getClassType());
+//            ImageTarget imageTarget = (ImageTarget) (trackable);
+//
+//            if((buttonMask & BUTTON_1) != 0) {
+//                Log.d(LOGTAG, "Toggle Button 1");
+//                toggleVirtualButton(imageTarget, BUTTON_1_NAME, -108.68f, -53.52f, -75.75f, -65.87f);
+//            }
+//            if((buttonMask & BUTTON_2) != 0) {
+//                Log.d(LOGTAG, "Toggle Button 2");
+//                toggleVirtualButton(imageTarget, BUTTON_2_NAME, -45.28f, -53.52f, -12.35f, -65.87f);
+//            }
+//            // Reactivate the data set:
+//            ot.activateDataSet(mCurrentDataset);
+//            buttonMask = 0;
+//            updateBtns = false;
+//        }
+    }
+
+    // -------->
+
+    @Override
+    public boolean doInitTrackers() {
+        // Indicate if the trackers were initialized correctly
+        boolean result = true;
+
+        TrackerManager tManager = TrackerManager.getInstance();
+        Tracker tracker;
+
+        // Trying to initialize the image tracker
+        tracker = tManager.initTracker(ObjectTracker.getClassType());
+        if(tracker == null) {
+            Log.e(LOGTAG, "Tracker not initialized. Tracker already initialized or the camera is already started");
+            result = false;
+        }
+        else {
+            Log.i(LOGTAG, "Tracker successfully initialized");
+        }
+        return result;
+    }
+
+
+    @Override
+    public boolean doStartTrackers() {
+        // Indicate if the trackers were started correctly
+        boolean result = true;
+
+        Tracker objectTracker = TrackerManager.getInstance().getTracker(ObjectTracker.getClassType());
+        if(objectTracker != null) objectTracker.start();
+
+        return result;
+    }
+
+
+    @Override
+    public boolean doStopTrackers() {
+        // Indicate if the trackers were stopped correctly
+        boolean result = true;
+
+        Tracker objectTracker = TrackerManager.getInstance().getTracker(ObjectTracker.getClassType());
+        if(objectTracker != null) objectTracker.stop();
+
+        return result;
+    }
+
+
+    @Override
+    public boolean doDeinitTrackers() {
+        // Indicate if the trackers were deinitialized correctly
+        boolean result = true;
+
+        TrackerManager tManager = TrackerManager.getInstance();
+        tManager.deinitTracker(ObjectTracker.getClassType());
+
+        return result;
+    }
+
+    // ----------------------------> AR Utils
+
+    // We want to load specific textures from the APK, which we will later use
+    // for rendering.
+    private void loadTextures() {
+        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/CubeWireframe.png", getAssets()));
+    }
+
     // Initializes AR application components.
-    private void initApplicationAR()
-    {
+    private void initApplicationAR() {
         // Create OpenGL ES view:
         int depthSize = 16;
         int stencilSize = 0;
         boolean translucent = Vuforia.requiresAlpha();
-        
+
         mGlView = new SampleApplicationGLView(this);
         mGlView.init(translucent, depthSize, stencilSize);
 
         mRenderer = new ObjectTargetRenderer(this, vuforiaAppSession);
         mRenderer.setTextures(mTextures);
         mGlView.setRenderer(mRenderer);
-
-//TODO
-//        CubeGLRenderer viewToGLRenderer = new CubeGLRenderer(this,vuforiaAppSession);
-//        GLLinearLayout glLinearLayout = getGlLinearLayout();
-//        glLinearLayout.setViewToGLRenderer(viewToGLRenderer);
-//        mGlView.setRenderer(viewToGLRenderer);
     }
 
-    @NonNull
-    private GLLinearLayout getGlLinearLayout() {
-        GLLinearLayout glLinearLayout = new GLLinearLayout(this);
-        TextView child = new TextView(this);
-        child.setText("Teeeeeeeeeeeeeeeeeeest");
-        glLinearLayout.addView(child);
-        return glLinearLayout;
-    }
+    // ----------------------------> Button Utils
 
+    boolean toggleVirtualButton(ImageTarget imageTarget, String name, float left, float top, float right, float bottom) {
+        Log.d(LOGTAG, "toggleVirtualButton");
 
-    private void startLoadingAnimation()
-    {
-        LayoutInflater inflater = LayoutInflater.from(this);
-        mUILayout = (RelativeLayout) inflater.inflate(R.layout.camera_overlay,
-            null, false);
-        
-        mUILayout.setVisibility(View.VISIBLE);
-        mUILayout.setBackgroundColor(Color.BLACK);
-        
-        // Gets a reference to the loading dialog
-        loadingDialogHandler.mLoadingDialogContainer = mUILayout
-            .findViewById(R.id.loading_indicator);
-        
-        // Shows the loading indicator at start
-        loadingDialogHandler
-            .sendEmptyMessage(LoadingDialogHandler.SHOW_LOADING_DIALOG);
-        
-        // Adds the inflated layout to the view
-        addContentView(mUILayout, new LayoutParams(LayoutParams.MATCH_PARENT,
-            LayoutParams.MATCH_PARENT));
-        
-    }
-    
-    
-    // Methods to load and destroy tracking data.
-    @Override
-    public boolean doLoadTrackersData()
-    {
-        TrackerManager tManager = TrackerManager.getInstance();
-        ObjectTracker objectTracker = (ObjectTracker) tManager
-            .getTracker(ObjectTracker.getClassType());
-        if (objectTracker == null)
-            return false;
-        
-        if (mCurrentDataset == null)
-            mCurrentDataset = objectTracker.createDataSet();
-        
-        if (mCurrentDataset == null)
-            return false;
-        
-        if (!mCurrentDataset.load("ObjectRecognition/test.xml",
-            STORAGE_TYPE.STORAGE_APPRESOURCE))
-            return false;
-        
-        if (!objectTracker.activateDataSet(mCurrentDataset))
-            return false;
-        
-        int numTrackables = mCurrentDataset.getNumTrackables();
-        for (int count = 0; count < numTrackables; count++)
-        {
-            Trackable trackable = mCurrentDataset.getTrackable(count);
-            if(isExtendedTrackingActive())
-            {
-                trackable.startExtendedTracking();
-            }
-            
-            String name = "Current Dataset : " + trackable.getName();
-            trackable.setUserData(name);
-            Log.d(LOGTAG, "UserData:Set the following user data "
-                + (String) trackable.getUserData());
+        boolean buttonToggleSuccess = false;
+
+        VirtualButton virtualButton = imageTarget.getVirtualButton(name);
+        if(virtualButton != null) {
+            Log.d(LOGTAG, "Destroying Virtual Button> " + name);
+            buttonToggleSuccess = imageTarget.destroyVirtualButton(virtualButton);
         }
-        
-        return true;
+        else {
+            Log.d(LOGTAG, "Creating Virtual Button> " + name);
+            Rectangle vbRectangle = new Rectangle(left, top, right, bottom);
+            VirtualButton virtualButton2 = imageTarget.createVirtualButton(name, vbRectangle);
+
+            if(virtualButton2 != null) {
+                // This is just a showcase. The values used here a set by
+                // default on Virtual Button creation
+                virtualButton2.setEnabled(true);
+                virtualButton2.setSensitivity(VirtualButton.SENSITIVITY.MEDIUM);
+                buttonToggleSuccess = true;
+            }
+        }
+
+        return buttonToggleSuccess;
     }
-    
-    
+
+    private void addButtonToToggle(int virtualButtonIdx) {
+        Log.d(LOGTAG, "addButtonToToggle");
+
+        assert (virtualButtonIdx >= 0 && virtualButtonIdx < NUM_BUTTONS);
+
+        switch(virtualButtonIdx) {
+            case 0:
+                buttonMask |= BUTTON_1;
+                break;
+
+            case 1:
+                buttonMask |= BUTTON_2;
+                break;
+        }
+        updateBtns = true;
+    }
+
+    // ----------------------------> Touch Listener
+
     @Override
-    public boolean doUnloadTrackersData()
-    {
-        // Indicate if the trackers were unloaded correctly
+    public boolean onTouchEvent(MotionEvent event) {
+        // Process the Gestures
+        if(mSampleAppMenu != null && mSampleAppMenu.processEvent(event)) return true;
+
+        return mGestureDetector.onTouchEvent(event);
+    }
+
+    // Process Single Tap event to trigger autofocus
+    private class GestureListener extends GestureDetector.SimpleOnGestureListener {
+        // Used to set autofocus one second after a manual focus is triggered
+        private final Handler autofocusHandler = new Handler();
+
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+            return true;
+        }
+
+
+        @Override
+        public boolean onSingleTapUp(MotionEvent e) {
+            // Generates a Handler to trigger autofocus
+            // after 1 second
+            autofocusHandler.postDelayed(new Runnable() {
+                public void run() {
+                    boolean result = CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);
+
+                    if(!result) Log.e("SingleTapUp", "Unable to trigger focus");
+                }
+            }, 1000L);
+
+            return true;
+        }
+    }
+
+    boolean isExtendedTrackingActive() {
+        return mExtendedTracking;
+    }
+
+    // ----------------------------> Menu
+
+    final public static int CMD_BACK = -1;
+    final public static int CMD_EXTENDED_TRACKING = 1;
+    final public static int CMD_FLASH = 2;
+
+    // This method sets the menu's settings
+    private void setSampleAppMenuSettings() {
+        SampleAppMenuGroup group;
+
+        group = mSampleAppMenu.addGroup("", false);
+        group.addTextItem(getString(R.string.menu_back), -1);
+
+        group = mSampleAppMenu.addGroup("", true);
+        group.addSelectionItem(getString(R.string.menu_extended_tracking), CMD_EXTENDED_TRACKING, false);
+        mFlashOptionView = group.addSelectionItem(getString(R.string.menu_flash), CMD_FLASH, false);
+
+        mSampleAppMenu.attachMenu();
+    }
+
+    @Override
+    public boolean menuProcess(int command) {
+
         boolean result = true;
-        
-        TrackerManager tManager = TrackerManager.getInstance();
-        ObjectTracker objectTracker = (ObjectTracker) tManager
-            .getTracker(ObjectTracker.getClassType());
-        if (objectTracker == null)
-            return false;
-        
-        if (mCurrentDataset != null && mCurrentDataset.isActive())
-        {
-            if (objectTracker.getActiveDataSet().equals(mCurrentDataset)
-                && !objectTracker.deactivateDataSet(mCurrentDataset))
-            {
-                result = false;
-            } else if (!objectTracker.destroyDataSet(mCurrentDataset))
-            {
-                result = false;
-            }
-            
-            mCurrentDataset = null;
+
+        switch(command) {
+            case CMD_BACK:
+                finish();
+                break;
+
+            case CMD_FLASH:
+                result = CameraDevice.getInstance().setFlashTorchMode(!mFlash);
+
+                if(result) {
+                    mFlash = !mFlash;
+                }
+                else {
+                    showToast(getString(mFlash ? R.string.menu_flash_error_off : R.string.menu_flash_error_on));
+                    Log.e(LOGTAG, getString(mFlash ? R.string.menu_flash_error_off : R.string.menu_flash_error_on));
+                }
+                break;
+
+            case CMD_EXTENDED_TRACKING:
+                for(int tIdx = 0; tIdx < mCurrentDataset.getNumTrackables(); tIdx++) {
+                    Trackable trackable = mCurrentDataset.getTrackable(tIdx);
+
+                    if(!mExtendedTracking) {
+                        if(!trackable.startExtendedTracking()) {
+                            Log.e(LOGTAG, "Failed to start extended tracking target");
+                            result = false;
+                        }
+                        else {
+                            Log.d(LOGTAG, "Successfully started extended tracking target");
+                        }
+                    }
+                    else {
+                        if(!trackable.stopExtendedTracking()) {
+                            Log.e(LOGTAG, "Failed to stop extended tracking target");
+                            result = false;
+                        }
+                        else {
+                            Log.d(LOGTAG, "Successfully started extended tracking target");
+                        }
+                    }
+                }
+
+                if(result) mExtendedTracking = !mExtendedTracking;
+
+                break;
+
         }
-        
+
         return result;
     }
-    
-    
-    @Override
-    public void onInitARDone(SampleApplicationException exception)
-    {
-        
-        if (exception == null)
-        {
-            initApplicationAR();
-            
-           if(mRenderer!=null) mRenderer.mIsActive = true;
-            
-            // Now add the GL surface view. It is important
-            // that the OpenGL ES surface view gets added
-            // BEFORE the camera is started and video
-            // background is configured.
-            addContentView(mGlView, new LayoutParams(LayoutParams.MATCH_PARENT,
-                LayoutParams.MATCH_PARENT));
-            
-            // Sets the UILayout to be drawn in front of the camera
-            mUILayout.bringToFront();
-            
-            // Sets the layout background to transparent
-            mUILayout.setBackgroundColor(Color.TRANSPARENT);
-            
-            try
-            {
-                vuforiaAppSession.startAR(CameraDevice.CAMERA.CAMERA_DEFAULT);
-            } catch (SampleApplicationException e)
-            {
-                Log.e(LOGTAG, e.getString());
-            }
-            
-            boolean result = CameraDevice.getInstance().setFocusMode(
-                CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
-            
-            if (result)
-                Log.e(LOGTAG, "Unable to enable continuous autofocus");
-            
-            mSampleAppMenu = new SampleAppMenu(this, this, "Object Reco",
-                mGlView, mUILayout, null);
-            setSampleAppMenuSettings();
-            
-        } else
-        {
-            Log.e(LOGTAG, exception.getString());
-            if(exception.getCode() == SampleApplicationException.LOADING_TRACKERS_FAILURE)
-            {
-                showInitializationErrorMessage( 
-                    getString(R.string.INIT_OBJECT_DATASET_NOT_FOUND_TITLE),
-                    getString(R.string.INIT_OBJECT_DATASET_NOT_FOUND));
 
-            }
-            else
-            {
-                showInitializationErrorMessage( getString(R.string.INIT_ERROR),
-                    exception.getString() );
-            }
-        }
+    // ----------------------------> UI Utils
+
+    private void startLoadingAnimation() {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        mUILayout = (RelativeLayout) inflater.inflate(R.layout.camera_overlay, null, false);
+
+        mUILayout.setVisibility(View.VISIBLE);
+        mUILayout.setBackgroundColor(Color.BLACK);
+
+        // Gets a reference to the loading dialog
+        loadingDialogHandler.mLoadingDialogContainer = mUILayout.findViewById(R.id.loading_indicator);
+
+        // Shows the loading indicator at start
+        loadingDialogHandler.sendEmptyMessage(LoadingDialogHandler.SHOW_LOADING_DIALOG);
+
+        // Adds the inflated layout to the view
+        addContentView(mUILayout, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
     }
-    
-    
+
     // Shows initialization error messages as System dialogs
-    public void showInitializationErrorMessage(String title, String message)
-    {
+    public void showInitializationErrorMessage(String title, String message) {
         final String errorMessage = message;
         final String messageTitle = title;
-        runOnUiThread(new Runnable()
-        {
-            public void run()
-            {
-                if (mErrorDialog != null)
-                {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                if(mErrorDialog != null) {
                     mErrorDialog.dismiss();
                 }
-                
+
                 // Generates an Alert Dialog to show the error message
-                AlertDialog.Builder builder = new AlertDialog.Builder(
-                    ObjectTargets.this);
-                builder
-                    .setMessage(errorMessage)
-                    .setTitle(messageTitle)
-                    .setCancelable(false)
-                    .setIcon(0)
-                    .setPositiveButton(getString(R.string.button_OK),
-                        new DialogInterface.OnClickListener()
-                        {
-                            public void onClick(DialogInterface dialog, int id)
-                            {
-                                finish();
-                            }
-                        });
-                
+                AlertDialog.Builder builder = new AlertDialog.Builder(ObjectTargets.this);
+                builder.setMessage(errorMessage).setTitle(messageTitle).setCancelable(false).setIcon(0).setPositiveButton(getString(R.string.button_OK), new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        finish();
+                    }
+                });
+
                 mErrorDialog = builder.create();
                 mErrorDialog.show();
             }
         });
     }
-    
-    
-    @Override
-    public void onQCARUpdate(State state)
-    {
-    }
-    
-    
-    @Override
-    public boolean doInitTrackers()
-    {
-        // Indicate if the trackers were initialized correctly
-        boolean result = true;
-        
-        TrackerManager tManager = TrackerManager.getInstance();
-        Tracker tracker;
-        
-        // Trying to initialize the image tracker
-        tracker = tManager.initTracker(ObjectTracker.getClassType());
-        if (tracker == null)
-        {
-            Log.e(
-                LOGTAG,
-                "Tracker not initialized. Tracker already initialized or the camera is already started");
-            result = false;
-        } else
-        {
-            Log.i(LOGTAG, "Tracker successfully initialized");
-        }
-        return result;
-    }
-    
-    
-    @Override
-    public boolean doStartTrackers()
-    {
-        // Indicate if the trackers were started correctly
-        boolean result = true;
-        
-        Tracker objectTracker = TrackerManager.getInstance().getTracker(
-            ObjectTracker.getClassType());
-        if (objectTracker != null)
-            objectTracker.start();
-        
-        return result;
-    }
-    
-    
-    @Override
-    public boolean doStopTrackers()
-    {
-        // Indicate if the trackers were stopped correctly
-        boolean result = true;
-        
-        Tracker objectTracker = TrackerManager.getInstance().getTracker(
-            ObjectTracker.getClassType());
-        if (objectTracker != null)
-            objectTracker.stop();
-        
-        return result;
-    }
-    
-    
-    @Override
-    public boolean doDeinitTrackers()
-    {
-        // Indicate if the trackers were deinitialized correctly
-        boolean result = true;
-        
-        TrackerManager tManager = TrackerManager.getInstance();
-        tManager.deinitTracker(ObjectTracker.getClassType());
-        
-        return result;
-    }
-    
-    
-    @Override
-    public boolean onTouchEvent(MotionEvent event)
-    {
-        // Process the Gestures
-        if (mSampleAppMenu != null && mSampleAppMenu.processEvent(event))
-            return true;
-        
-        return mGestureDetector.onTouchEvent(event);
-    }
-    
-    
-    boolean isExtendedTrackingActive()
-    {
-        return mExtendedTracking;
-    }
-    
-    final public static int CMD_BACK = -1;
-    final public static int CMD_EXTENDED_TRACKING = 1;
-    final public static int CMD_FLASH = 2;
-    
-    // This method sets the menu's settings
-    private void setSampleAppMenuSettings()
-    {
-        SampleAppMenuGroup group;
-        
-        group = mSampleAppMenu.addGroup("", false);
-        group.addTextItem(getString(R.string.menu_back), -1);
-        
-        group = mSampleAppMenu.addGroup("", true);
-        group.addSelectionItem(getString(R.string.menu_extended_tracking),
-            CMD_EXTENDED_TRACKING, false);
-        mFlashOptionView = group.addSelectionItem(
-            getString(R.string.menu_flash), CMD_FLASH, false);
-        
-        mSampleAppMenu.attachMenu();
-    }
-    
-    
-    @Override
-    public boolean menuProcess(int command)
-    {
-        
-        boolean result = true;
-        
-        switch (command)
-        {
-            case CMD_BACK:
-                finish();
-                break;
-            
-            case CMD_FLASH:
-                result = CameraDevice.getInstance().setFlashTorchMode(!mFlash);
-                
-                if (result)
-                {
-                    mFlash = !mFlash;
-                } else
-                {
-                    showToast(getString(mFlash ? R.string.menu_flash_error_off
-                        : R.string.menu_flash_error_on));
-                    Log.e(LOGTAG,
-                        getString(mFlash ? R.string.menu_flash_error_off
-                            : R.string.menu_flash_error_on));
-                }
-                break;
-            
-            case CMD_EXTENDED_TRACKING:
-                for (int tIdx = 0; tIdx < mCurrentDataset.getNumTrackables(); tIdx++)
-                {
-                    Trackable trackable = mCurrentDataset.getTrackable(tIdx);
-                    
-                    if (!mExtendedTracking)
-                    {
-                        if (!trackable.startExtendedTracking())
-                        {
-                            Log.e(LOGTAG,
-                                "Failed to start extended tracking target");
-                            result = false;
-                        } else
-                        {
-                            Log.d(LOGTAG,
-                                "Successfully started extended tracking target");
-                        }
-                    } else
-                    {
-                        if (!trackable.stopExtendedTracking())
-                        {
-                            Log.e(LOGTAG,
-                                "Failed to stop extended tracking target");
-                            result = false;
-                        } else
-                        {
-                            Log.d(LOGTAG,
-                                "Successfully started extended tracking target");
-                        }
-                    }
-                }
-                
-                if (result)
-                    mExtendedTracking = !mExtendedTracking;
-                
-                break;
-            
-        }
-        
-        return result;
-    }
-    
-    
-    private void showToast(String text)
-    {
+
+    private void showToast(String text) {
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
     }
 }
