@@ -7,8 +7,6 @@ and other countries. Trademarks of QUALCOMM Incorporated are used with permissio
 
 package com.qualcomm.vuforia.samples.VuforiaSamples.app.ObjectRecognition;
 
-import java.util.Vector;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -34,8 +32,8 @@ import com.qualcomm.vuforia.DataSet;
 import com.qualcomm.vuforia.ImageTarget;
 import com.qualcomm.vuforia.ObjectTracker;
 import com.qualcomm.vuforia.Rectangle;
-import com.qualcomm.vuforia.State;
 import com.qualcomm.vuforia.STORAGE_TYPE;
+import com.qualcomm.vuforia.State;
 import com.qualcomm.vuforia.Trackable;
 import com.qualcomm.vuforia.TrackableSource;
 import com.qualcomm.vuforia.Tracker;
@@ -52,6 +50,8 @@ import com.qualcomm.vuforia.samples.VuforiaSamples.R;
 import com.qualcomm.vuforia.samples.VuforiaSamples.ui.SampleAppMenu.SampleAppMenu;
 import com.qualcomm.vuforia.samples.VuforiaSamples.ui.SampleAppMenu.SampleAppMenuGroup;
 import com.qualcomm.vuforia.samples.VuforiaSamples.ui.SampleAppMenu.SampleAppMenuInterface;
+
+import java.util.Vector;
 
 
 public class ObjectTargets extends Activity implements SampleApplicationControl, SampleAppMenuInterface {
@@ -222,7 +222,8 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
 
         if(mCurrentDataset == null) return false;
 
-        if(!mCurrentDataset.load("test.xml", STORAGE_TYPE.STORAGE_APPRESOURCE))
+        if(!mCurrentDataset.load("VirtualButtons/Wood.xml", STORAGE_TYPE.STORAGE_APPRESOURCE))
+//       if(!mCurrentDataset.load("test.xml", STORAGE_TYPE.STORAGE_APPRESOURCE))
             return false;
 
         TrackableSource source = new TrackableSource();
@@ -309,9 +310,6 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
             mSampleAppMenu = new SampleAppMenu(this, this, "Object Reco", mGlView, mUILayout, null);
             setSampleAppMenuSettings();
 
-           // addButtonToToggle(0);
-           // addButtonToToggle(1);
-
         }
         else {
             Log.e(LOGTAG, exception.getString());
@@ -327,27 +325,27 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
 
     @Override
     public void onQCARUpdate(State state) {
-//        if(updateBtns) {
-//            // Update runs in the tracking thread therefore it is guaranteed
-//            // that the tracker is
-//            // not doing anything at this point. => Reconfiguration is possible.
-//
-//            ObjectTracker ot = (ObjectTracker) (TrackerManager.getInstance().getTracker(ObjectTracker.getClassType()));
-//            ot.deactivateDataSet(mCurrentDataset);
-//            Trackable trackable = mCurrentDataset.getTrackable(0);
-//            ImageTarget imageTarget = (ImageTarget) (trackable);
-//            if((buttonMask & BUTTON_1) != 0) {
-//                Log.d(LOGTAG, "Toggle Button 1");
-//                toggleVirtualButton(imageTarget, BUTTON_1_NAME, -108.68f, -53.52f, -75.75f, -65.87f);
-//            }
-//            if((buttonMask & BUTTON_2) != 0) {
-//                Log.d(LOGTAG, "Toggle Button 2");
-//                toggleVirtualButton(imageTarget, BUTTON_2_NAME, -45.28f, -53.52f, -12.35f, -65.87f);
-//            }
-//            ot.activateDataSet(mCurrentDataset);
-//            buttonMask = 0;
-//            updateBtns = false;
-//        }
+        if(updateBtns) {
+            // Update runs in the tracking thread therefore it is guaranteed
+            // that the tracker is
+            // not doing anything at this point. => Reconfiguration is possible.
+
+            ObjectTracker ot = (ObjectTracker) (TrackerManager.getInstance().getTracker(ObjectTracker.getClassType()));
+            ot.deactivateDataSet(mCurrentDataset);
+            Trackable trackable = mCurrentDataset.getTrackable(0);
+            ImageTarget imageTarget = (ImageTarget) (trackable);
+            if((buttonMask & VirtualButtonsUtils.BUTTON_1) != 0) {
+                Log.d(LOGTAG, "Toggle Button 1");
+                toggleVirtualButton(imageTarget, VirtualButtonsUtils.BUTTON_1_NAME, -108.68f, -53.52f, -75.75f, -65.87f);
+            }
+            if((buttonMask & VirtualButtonsUtils.BUTTON_2) != 0) {
+                Log.d(LOGTAG, "Toggle Button 2");
+                toggleVirtualButton(imageTarget, VirtualButtonsUtils.BUTTON_2_NAME, -45.28f, -53.52f, -12.35f, -65.87f);
+            }
+            ot.activateDataSet(mCurrentDataset);
+            buttonMask = 0;
+            updateBtns = false;
+        }
     }
 
     // -------->
@@ -463,8 +461,6 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
 
     private void addButtonToToggle(int virtualButtonIdx) {
         Log.d(LOGTAG, "addButtonToToggle");
-        assert (virtualButtonIdx >= 0 && virtualButtonIdx < VirtualButtonsUtils.NUM_BUTTONS);
-
         switch(virtualButtonIdx) {
             case 0:
                 buttonMask |= VirtualButtonsUtils.BUTTON_1;

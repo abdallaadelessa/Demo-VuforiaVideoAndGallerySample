@@ -7,15 +7,11 @@ and other countries. Trademarks of QUALCOMM Incorporated are used with permissio
 
 package com.qualcomm.vuforia.samples.VuforiaSamples.app.ObjectRecognition;
 
-import java.util.Vector;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
-
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.qualcomm.vuforia.ImageTargetResult;
 import com.qualcomm.vuforia.ObjectTarget;
@@ -34,8 +30,14 @@ import com.qualcomm.vuforia.samples.SampleApplication.utils.CubeObject;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.CubeShaders;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.LineShaders;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.LoadingDialogHandler;
+import com.qualcomm.vuforia.samples.SampleApplication.utils.MeshObject;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.SampleUtils;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.Texture;
+
+import java.util.Vector;
+
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
 
 
 // The renderer class for the ImageTargets sample. 
@@ -44,7 +46,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
 
     private SampleApplicationSession vuforiaAppSession;
     private ObjectTargets mActivity;
-    private CubeObject mCubeObject;
+    private MeshObject mMeshObject;
     private Vector<Texture> mTextures;
     boolean mIsActive = false;
 
@@ -109,7 +111,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
 
     // Function for initializing the renderer.
     private void initRendering() {
-        mCubeObject = new CubeObject();
+        mMeshObject = new CubeObject();
 
         // Define clear color
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, Vuforia.requiresAlpha() ? 0.0f : 1.0f);
@@ -182,7 +184,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
         // Did we find any trackables this frame?
 
         if(state.getNumTrackableResults() > 0) {
-            Log.i(LOGTAG,"Num of Trackables : "+state.getNumTrackableResults());
+            Log.i(LOGTAG, "Num of Trackables : " + state.getNumTrackableResults());
             for(int tIdx = 0; tIdx < state.getNumTrackableResults(); tIdx++) {
                 TrackableResult trackableResult = state.getTrackableResult(tIdx);
 
@@ -207,14 +209,13 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
 
     private void renderVirtualBtns(TrackableResult trackableResult) {
         float[] modelViewMatrix = Tool.convertPose2GLMatrix(trackableResult.getPose()).getData();
+        // Set transformations:
+        float[] modelViewProjection = new float[16];
+        Matrix.multiplyMM(modelViewProjection, 0, vuforiaAppSession.getProjectionMatrix().getData(), 0, modelViewMatrix, 0);
 
         ImageTargetResult imageTargetResult = (ImageTargetResult) trackableResult;
 
         Log.i(LOGTAG, "Num Of Btns : " + imageTargetResult.getNumVirtualButtons());
-
-        // Set transformations:
-        float[] modelViewProjection = new float[16];
-        Matrix.multiplyMM(modelViewProjection, 0, vuforiaAppSession.getProjectionMatrix().getData(), 0, modelViewMatrix, 0);
 
         float vbVertices[] = new float[imageTargetResult.getNumVirtualButtons() * 24];
         short vbCounter = 0;
@@ -229,45 +230,49 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
             if(buttonResult.isPressed()) {
                 mCurrentTextureIndex = buttonIndex + 1;
                 Log.i(LOGTAG, "Button Pressed " + mCurrentTextureIndex);
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mActivity, "Button Pressed " + mCurrentTextureIndex, 1000).show();
+                    }
+                });
+
             }
 
-            Rectangle vbRectangle[] = new Rectangle[2];
-            //            <VirtualButton name="moveLeft" enabled="true" rectangle="-108.68 -53.52 -75.75 -65.87"/>
-            //            <VirtualButton name="moveRight" enabled="true" rectangle="76.57 -53.52 109.50 -65.87"/>
-            vbRectangle[0] = new Rectangle(-108.68f, -53.52f, -75.75f, -65.87f);
-            vbRectangle[1] = new Rectangle(76.57f, -53.52f, 109.50f, -65.87f);
+            Rectangle vbRectangle = (Rectangle) button.getArea();
 
             // We add the vertices to a common array in order to have one
             // single
             // draw call. This is more efficient than having multiple
             // glDrawArray calls
-            vbVertices[vbCounter] = vbRectangle[buttonIndex].getLeftTopX();
-            vbVertices[vbCounter + 1] = vbRectangle[buttonIndex].getLeftTopY();
+            vbVertices[vbCounter] = vbRectangle.getLeftTopX();
+            vbVertices[vbCounter + 1] = vbRectangle.getLeftTopY();
             vbVertices[vbCounter + 2] = 0.0f;
-            vbVertices[vbCounter + 3] = vbRectangle[buttonIndex].getRightBottomX();
-            vbVertices[vbCounter + 4] = vbRectangle[buttonIndex].getLeftTopY();
+            vbVertices[vbCounter + 3] = vbRectangle.getRightBottomX();
+            vbVertices[vbCounter + 4] = vbRectangle.getLeftTopY();
             vbVertices[vbCounter + 5] = 0.0f;
-            vbVertices[vbCounter + 6] = vbRectangle[buttonIndex].getRightBottomX();
-            vbVertices[vbCounter + 7] = vbRectangle[buttonIndex].getLeftTopY();
+            vbVertices[vbCounter + 6] = vbRectangle.getRightBottomX();
+            vbVertices[vbCounter + 7] = vbRectangle.getLeftTopY();
             vbVertices[vbCounter + 8] = 0.0f;
-            vbVertices[vbCounter + 9] = vbRectangle[buttonIndex].getRightBottomX();
-            vbVertices[vbCounter + 10] = vbRectangle[buttonIndex].getRightBottomY();
+            vbVertices[vbCounter + 9] = vbRectangle.getRightBottomX();
+            vbVertices[vbCounter + 10] = vbRectangle.getRightBottomY();
             vbVertices[vbCounter + 11] = 0.0f;
-            vbVertices[vbCounter + 12] = vbRectangle[buttonIndex].getRightBottomX();
-            vbVertices[vbCounter + 13] = vbRectangle[buttonIndex].getRightBottomY();
+            vbVertices[vbCounter + 12] = vbRectangle.getRightBottomX();
+            vbVertices[vbCounter + 13] = vbRectangle.getRightBottomY();
             vbVertices[vbCounter + 14] = 0.0f;
-            vbVertices[vbCounter + 15] = vbRectangle[buttonIndex].getLeftTopX();
-            vbVertices[vbCounter + 16] = vbRectangle[buttonIndex].getRightBottomY();
+            vbVertices[vbCounter + 15] = vbRectangle.getLeftTopX();
+            vbVertices[vbCounter + 16] = vbRectangle.getRightBottomY();
             vbVertices[vbCounter + 17] = 0.0f;
-            vbVertices[vbCounter + 18] = vbRectangle[buttonIndex].getLeftTopX();
-            vbVertices[vbCounter + 19] = vbRectangle[buttonIndex].getRightBottomY();
+            vbVertices[vbCounter + 18] = vbRectangle.getLeftTopX();
+            vbVertices[vbCounter + 19] = vbRectangle.getRightBottomY();
             vbVertices[vbCounter + 20] = 0.0f;
-            vbVertices[vbCounter + 21] = vbRectangle[buttonIndex].getLeftTopX();
-            vbVertices[vbCounter + 22] = vbRectangle[buttonIndex].getLeftTopY();
+            vbVertices[vbCounter + 21] = vbRectangle.getLeftTopX();
+            vbVertices[vbCounter + 22] = vbRectangle.getLeftTopY();
             vbVertices[vbCounter + 23] = 0.0f;
             vbCounter += 24;
 
         }
+
 
         // We only render if there is something on the array
         if(vbCounter > 0) {
@@ -294,22 +299,21 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
 
     private void render3DModel(TrackableResult trackableResult, Texture thisTexture) {
         float[] modelViewMatrix = Tool.convertPose2GLMatrix(trackableResult.getPose()).getData();
-        float[] modelViewProjectionScaled = new float[16];
-        float[] modelViewScaled = modelViewMatrix;
 
         Trackable trackable = trackableResult.getTrackable();
         ObjectTarget objectTarget = (ObjectTarget) trackable;
         float[] objectSize = objectTarget.getSize().getData();
 
         // Matrix
-        Matrix.scaleM(modelViewScaled, 0, objectSize[0] / 2, objectSize[1] / 2, 0);
-        Matrix.multiplyMM(modelViewProjectionScaled, 0, vuforiaAppSession.getProjectionMatrix().getData(), 0, modelViewScaled, 0);
+        float[] modelViewProjection = new float[16];
+        Matrix.scaleM(modelViewMatrix, 0, objectSize[0] / 2, objectSize[1] / 2, objectSize[2] / 2);
+        Matrix.multiplyMM(modelViewProjection, 0, vuforiaAppSession.getProjectionMatrix().getData(), 0, modelViewMatrix, 0);
 
         // Render 3D model
         GLES20.glUseProgram(shaderProgramID);
-        GLES20.glVertexAttribPointer(vertexHandle, 3, GLES20.GL_FLOAT, false, 0, mCubeObject.getVertices());
-        GLES20.glVertexAttribPointer(normalHandle, 3, GLES20.GL_FLOAT, false, 0, mCubeObject.getNormals());
-        GLES20.glVertexAttribPointer(textureCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mCubeObject.getTexCoords());
+        GLES20.glVertexAttribPointer(vertexHandle, 3, GLES20.GL_FLOAT, false, 0, mMeshObject.getVertices());
+        GLES20.glVertexAttribPointer(normalHandle, 3, GLES20.GL_FLOAT, false, 0, mMeshObject.getNormals());
+        GLES20.glVertexAttribPointer(textureCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mMeshObject.getTexCoords());
 
         GLES20.glEnableVertexAttribArray(vertexHandle);
         GLES20.glEnableVertexAttribArray(normalHandle);
@@ -317,9 +321,9 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, thisTexture.mTextureID[0]);
-        GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, modelViewProjectionScaled, 0);
+        GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, modelViewProjection, 0);
         GLES20.glUniform1i(texSampler2DHandle, 0);
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, mCubeObject.getNumObjectIndex(), GLES20.GL_UNSIGNED_SHORT, mCubeObject.getIndices());
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, mMeshObject.getNumObjectIndex(), GLES20.GL_UNSIGNED_SHORT, mMeshObject.getIndices());
 
         GLES20.glDisableVertexAttribArray(vertexHandle);
         GLES20.glDisableVertexAttribArray(normalHandle);
