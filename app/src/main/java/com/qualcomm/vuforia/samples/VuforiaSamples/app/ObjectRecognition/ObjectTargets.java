@@ -18,7 +18,6 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
@@ -28,7 +27,6 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.CheckBox;
 import android.widget.RelativeLayout;
 import android.widget.Switch;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.qualcomm.vuforia.CameraDevice;
@@ -39,6 +37,7 @@ import com.qualcomm.vuforia.Rectangle;
 import com.qualcomm.vuforia.State;
 import com.qualcomm.vuforia.STORAGE_TYPE;
 import com.qualcomm.vuforia.Trackable;
+import com.qualcomm.vuforia.TrackableSource;
 import com.qualcomm.vuforia.Tracker;
 import com.qualcomm.vuforia.TrackerManager;
 import com.qualcomm.vuforia.VirtualButton;
@@ -53,10 +52,6 @@ import com.qualcomm.vuforia.samples.VuforiaSamples.R;
 import com.qualcomm.vuforia.samples.VuforiaSamples.ui.SampleAppMenu.SampleAppMenu;
 import com.qualcomm.vuforia.samples.VuforiaSamples.ui.SampleAppMenu.SampleAppMenuGroup;
 import com.qualcomm.vuforia.samples.VuforiaSamples.ui.SampleAppMenu.SampleAppMenuInterface;
-import com.qualcomm.vuforia.samples.moselay.viewToGlRenderer.GLLinearLayout;
-import com.qualcomm.vuforia.samples.moselay.viewToGlRenderer.GLRenderable;
-import com.qualcomm.vuforia.samples.moselay.viewToGlRenderer.ViewToGLRenderer;
-import com.qualcomm.vuforia.samples.moselay.viewToGlRenderer.cuberenerer.CubeGLRenderer;
 
 
 public class ObjectTargets extends Activity implements SampleApplicationControl, SampleAppMenuInterface {
@@ -95,13 +90,8 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
     //--->
     // Virtual Button runtime creation:
     private boolean updateBtns = false;
-    // Enumeration for masking button indices into single integer:
-    private static final int BUTTON_1 = 1;
-    private static final int BUTTON_2 = 2;
-    private static final String BUTTON_1_NAME = "Left";
-    private static final String BUTTON_2_NAME = "Right";
+
     private byte buttonMask = 0;
-    static final int NUM_BUTTONS = 2;
 
 
     // ---------------------------->
@@ -232,11 +222,13 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
 
         if(mCurrentDataset == null) return false;
 
-        if(!mCurrentDataset.load("ObjectRecognition/test.xml", STORAGE_TYPE.STORAGE_APPRESOURCE))
+        if(!mCurrentDataset.load("test.xml", STORAGE_TYPE.STORAGE_APPRESOURCE))
             return false;
 
-        if(!objectTracker.activateDataSet(mCurrentDataset)) return false;
+        TrackableSource source = new TrackableSource();
+        mCurrentDataset.createTrackable(source);
 
+        if(!objectTracker.activateDataSet(mCurrentDataset)) return false;
 
         //Note: Disable Extended Tracking
         //        int numTrackables = mCurrentDataset.getNumTrackables();
@@ -317,6 +309,9 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
             mSampleAppMenu = new SampleAppMenu(this, this, "Object Reco", mGlView, mUILayout, null);
             setSampleAppMenuSettings();
 
+           // addButtonToToggle(0);
+           // addButtonToToggle(1);
+
         }
         else {
             Log.e(LOGTAG, exception.getString());
@@ -338,18 +333,9 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
 //            // not doing anything at this point. => Reconfiguration is possible.
 //
 //            ObjectTracker ot = (ObjectTracker) (TrackerManager.getInstance().getTracker(ObjectTracker.getClassType()));
-//            assert (mCurrentDataset != null);
-//
-//            // Deactivate the data set prior to reconfiguration:
 //            ot.deactivateDataSet(mCurrentDataset);
-//
-//            assert (mCurrentDataset.getNumTrackables() > 0);
 //            Trackable trackable = mCurrentDataset.getTrackable(0);
-//
-//            assert (trackable != null);
-//            assert (trackable.getType() == ObjectTracker.getClassType());
 //            ImageTarget imageTarget = (ImageTarget) (trackable);
-//
 //            if((buttonMask & BUTTON_1) != 0) {
 //                Log.d(LOGTAG, "Toggle Button 1");
 //                toggleVirtualButton(imageTarget, BUTTON_1_NAME, -108.68f, -53.52f, -75.75f, -65.87f);
@@ -358,7 +344,6 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
 //                Log.d(LOGTAG, "Toggle Button 2");
 //                toggleVirtualButton(imageTarget, BUTTON_2_NAME, -45.28f, -53.52f, -12.35f, -65.87f);
 //            }
-//            // Reactivate the data set:
 //            ot.activateDataSet(mCurrentDataset);
 //            buttonMask = 0;
 //            updateBtns = false;
@@ -416,10 +401,8 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
     public boolean doDeinitTrackers() {
         // Indicate if the trackers were deinitialized correctly
         boolean result = true;
-
         TrackerManager tManager = TrackerManager.getInstance();
         tManager.deinitTracker(ObjectTracker.getClassType());
-
         return result;
     }
 
@@ -428,7 +411,10 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
     // We want to load specific textures from the APK, which we will later use
     // for rendering.
     private void loadTextures() {
-        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/CubeWireframe.png", getAssets()));
+        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/1.png", getAssets()));
+//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/2.png", getAssets()));
+//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/3.png", getAssets()));
+//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/4.png", getAssets()));
     }
 
     // Initializes AR application components.
@@ -477,16 +463,15 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
 
     private void addButtonToToggle(int virtualButtonIdx) {
         Log.d(LOGTAG, "addButtonToToggle");
-
-        assert (virtualButtonIdx >= 0 && virtualButtonIdx < NUM_BUTTONS);
+        assert (virtualButtonIdx >= 0 && virtualButtonIdx < VirtualButtonsUtils.NUM_BUTTONS);
 
         switch(virtualButtonIdx) {
             case 0:
-                buttonMask |= BUTTON_1;
+                buttonMask |= VirtualButtonsUtils.BUTTON_1;
                 break;
 
             case 1:
-                buttonMask |= BUTTON_2;
+                buttonMask |= VirtualButtonsUtils.BUTTON_2;
                 break;
         }
         updateBtns = true;
@@ -530,7 +515,7 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
         }
     }
 
-    boolean isExtendedTrackingActive() {
+    public boolean isExtendedTrackingActive() {
         return mExtendedTracking;
     }
 

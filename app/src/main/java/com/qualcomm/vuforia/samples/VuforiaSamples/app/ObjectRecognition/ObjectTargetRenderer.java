@@ -17,261 +17,328 @@ import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
 
-import com.qualcomm.vuforia.Matrix44F;
+import com.qualcomm.vuforia.ImageTargetResult;
 import com.qualcomm.vuforia.ObjectTarget;
-import com.qualcomm.vuforia.ObjectTargetResult;
+import com.qualcomm.vuforia.Rectangle;
 import com.qualcomm.vuforia.Renderer;
 import com.qualcomm.vuforia.State;
 import com.qualcomm.vuforia.Tool;
 import com.qualcomm.vuforia.Trackable;
 import com.qualcomm.vuforia.TrackableResult;
 import com.qualcomm.vuforia.VIDEO_BACKGROUND_REFLECTION;
+import com.qualcomm.vuforia.VirtualButton;
+import com.qualcomm.vuforia.VirtualButtonResult;
 import com.qualcomm.vuforia.Vuforia;
 import com.qualcomm.vuforia.samples.SampleApplication.SampleApplicationSession;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.CubeObject;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.CubeShaders;
+import com.qualcomm.vuforia.samples.SampleApplication.utils.LineShaders;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.LoadingDialogHandler;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.SampleUtils;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.Texture;
 
 
 // The renderer class for the ImageTargets sample. 
-public class ObjectTargetRenderer implements GLSurfaceView.Renderer
-{
+public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
     private static final String LOGTAG = "ObjectTargetRenderer";
-    
+
     private SampleApplicationSession vuforiaAppSession;
     private ObjectTargets mActivity;
-    
-    private Vector<Texture> mTextures;
-    
-    private int shaderProgramID;
-    
-    private int vertexHandle;
-    
-    private int textureCoordHandle;
-    
-    private int texSampler2DHandle;
-    
-    private int normalHandle;
-    
-    private int mvpMatrixHandle;
-    
-    private int opacityHandle;
-    
-    private int colorHandle;
-    
     private CubeObject mCubeObject;
-    
-    private Renderer mRenderer;
-    
+    private Vector<Texture> mTextures;
     boolean mIsActive = false;
-    
-    
-    public ObjectTargetRenderer(ObjectTargets activity,
-        SampleApplicationSession session)
-    {
+
+    // // OpenGL ES 2.0 specific (3D Model):
+    private int shaderProgramID;
+    private int vertexHandle;
+    private int textureCoordHandle;
+    private int texSampler2DHandle;
+    private int normalHandle;
+    private int mvpMatrixHandle;
+
+    // OpenGL ES 2.0 specific (Virtual Buttons):
+    private int vbShaderProgramID = 0;
+    private int vbVertexHandle = 0;
+    private int lineOpacityHandle = 0;
+    private int lineColorHandle = 0;
+    private int mvpMatrixButtonsHandle = 0;
+    private int mCurrentTextureIndex = 0;
+
+    // -------------------------------------->
+
+    public ObjectTargetRenderer(ObjectTargets activity, SampleApplicationSession session) {
         mActivity = activity;
         vuforiaAppSession = session;
     }
-    
-    
+
+
     // Called to draw the current frame.
     @Override
-    public void onDrawFrame(GL10 gl)
-    {
-        if (!mIsActive)
-            return;
-        
+    public void onDrawFrame(GL10 gl) {
+        if(!mIsActive) return;
+
         // Call our function to render content
         renderFrame();
     }
-    
-    
+
+
     // Called when the surface is created or recreated.
     @Override
-    public void onSurfaceCreated(GL10 gl, EGLConfig config)
-    {
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         Log.d(LOGTAG, "GLRenderer.onSurfaceCreated");
-        
+
         initRendering();
-        
+
         // Call Vuforia function to (re)initialize rendering after first use
         // or after OpenGL ES context was lost (e.g. after onPause/onResume):
         vuforiaAppSession.onSurfaceCreated();
     }
-    
-    
+
+
     // Called when the surface changed size.
     @Override
-    public void onSurfaceChanged(GL10 gl, int width, int height)
-    {
+    public void onSurfaceChanged(GL10 gl, int width, int height) {
         Log.d(LOGTAG, "GLRenderer.onSurfaceChanged");
-        
+
         // Call Vuforia function to handle render surface size changes:
         vuforiaAppSession.onSurfaceChanged(width, height);
     }
-    
-    
+
+
+    // --------------------------------------> Init
+
     // Function for initializing the renderer.
-    private void initRendering()
-    {
+    private void initRendering() {
         mCubeObject = new CubeObject();
-        
-        mRenderer = Renderer.getInstance();
-        
+
+        // Define clear color
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, Vuforia.requiresAlpha() ? 0.0f : 1.0f);
+
         // Now generate the OpenGL texture objects and add settings
-        for (Texture t : mTextures)
-        {
+        for(Texture t : mTextures) {
             GLES20.glGenTextures(1, t.mTextureID, 0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, t.mTextureID[0]);
-            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-                GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-                GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
-                t.mWidth, t.mHeight, 0, GLES20.GL_RGBA,
-                GLES20.GL_UNSIGNED_BYTE, t.mData);
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, t.mWidth, t.mHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, t.mData);
         }
-        SampleUtils.checkGLError("ObjectTarget GLInitRendering");
-        
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, Vuforia.requiresAlpha() ? 0.0f
-            : 1.0f);
-        
-        shaderProgramID = SampleUtils.createProgramFromShaderSrc(
-            CubeShaders.CUBE_MESH_VERTEX_SHADER,
-            CubeShaders.CUBE_MESH_FRAGMENT_SHADER);
-        
-        vertexHandle = GLES20.glGetAttribLocation(shaderProgramID,
-            "vertexPosition");
-        textureCoordHandle = GLES20.glGetAttribLocation(shaderProgramID,
-            "vertexTexCoord");
-        normalHandle = GLES20.glGetAttribLocation(shaderProgramID,
-            "vertexNormal");
-        texSampler2DHandle = GLES20.glGetUniformLocation(shaderProgramID,
-            "texSampler2D");
-        mvpMatrixHandle = GLES20.glGetUniformLocation(shaderProgramID,
-            "modelViewProjectionMatrix");
-        opacityHandle = GLES20.glGetUniformLocation(shaderProgramID,
-            "opacity");
-        colorHandle = GLES20.glGetUniformLocation(shaderProgramID, "color");
-        
-        // Hide the Loading Dialog
-        mActivity.loadingDialogHandler
-            .sendEmptyMessage(LoadingDialogHandler.HIDE_LOADING_DIALOG);
-        
-    }
-    
-    
-    // The render function.
-    private void renderFrame()
-    {
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-        
-        State state = mRenderer.begin();
-        mRenderer.drawVideoBackground();
-        
-        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-        
-        // handle face culling, we need to detect if we are using reflection
-        // to determine the direction of the culling
-        GLES20.glEnable(GLES20.GL_CULL_FACE);
-        GLES20.glEnable(GLES20.GL_BLEND);
-        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-        
-        if (Renderer.getInstance().getVideoBackgroundConfig().getReflection() == VIDEO_BACKGROUND_REFLECTION.VIDEO_BACKGROUND_REFLECTION_ON)
-            GLES20.glFrontFace(GLES20.GL_CW); // Front camera
-        else
-            GLES20.glFrontFace(GLES20.GL_CCW); // Back camera
-            
-        // did we find any trackables this frame?
-        for (int tIdx = 0; tIdx < state.getNumTrackableResults(); tIdx++)
-        {
-            TrackableResult result = state.getTrackableResult(tIdx);
-            Trackable trackable = result.getTrackable();
-            printUserData(trackable);
-            
-            if (!result.isOfType(ObjectTargetResult.getClassType()))
-                continue;
-            
-            ObjectTarget objectTarget = (ObjectTarget) trackable;
-            
-            Matrix44F modelViewMatrix_Vuforia = Tool
-                .convertPose2GLMatrix(result.getPose());
-            float[] modelViewMatrix = modelViewMatrix_Vuforia.getData();
-            
-            // deal with the modelview and projection matrices
-            float[] modelViewProjection = new float[16];
-            
-            float[] objectSize = objectTarget.getSize().getData();
-            
-            Matrix.translateM(modelViewMatrix, 0, 0, 0, 0);//TODO Updated
-            
-            Matrix.scaleM(modelViewMatrix, 0, objectSize[0]/2,objectSize[1]/2, 0);
 
-            Matrix.multiplyMM(modelViewProjection, 0, vuforiaAppSession
-                .getProjectionMatrix().getData(), 0, modelViewMatrix, 0);
-            
-            // activatrigidBodyTarget.xmle the shader program and bind the vertex/normal/tex coords
-            GLES20.glUseProgram(shaderProgramID);
-            
-            GLES20.glVertexAttribPointer(vertexHandle, 3, GLES20.GL_FLOAT,
-                false, 0, mCubeObject.getVertices());
-            GLES20.glUniform1f(opacityHandle, 0.3f);
-            GLES20.glUniform3f(colorHandle, 0.0f, 0.0f, 0.0f);
-            GLES20.glVertexAttribPointer(textureCoordHandle, 2,
-                GLES20.GL_FLOAT, false, 0, mCubeObject.getTexCoords());
-            GLES20.glVertexAttribPointer(normalHandle, 3, GLES20.GL_FLOAT,
-                false, 0, mCubeObject.getNormals());
-               
-            GLES20.glEnableVertexAttribArray(vertexHandle);
-            GLES20.glEnableVertexAttribArray(normalHandle);
-            GLES20.glEnableVertexAttribArray(textureCoordHandle);
-            
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,
-                mTextures.get(0).mTextureID[0]);
-            GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false,
-                modelViewProjection, 0);
-            GLES20.glUniform1i(texSampler2DHandle, 0);
-            
-    
-            // pass the model view matrix to the shader
-            GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false,
-                modelViewProjection, 0);
-               
-            // finally render
-            GLES20.glDrawElements(GLES20.GL_TRIANGLES,
-                mCubeObject.getNumObjectIndex(), GLES20.GL_UNSIGNED_SHORT,
-                mCubeObject.getIndices());
-                
-            // disable the enabled arrays
-            GLES20.glDisableVertexAttribArray(vertexHandle);
-            GLES20.glDisableVertexAttribArray(normalHandle);
-            GLES20.glDisableVertexAttribArray(textureCoordHandle);
-            
-            SampleUtils.checkGLError("Render Frame");
-            
-        }
-        
-        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
-        GLES20.glDisable(GLES20.GL_BLEND);
-        
-        mRenderer.end();
+        SampleUtils.checkGLError("ObjectTarget GLInitRendering");
+
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, Vuforia.requiresAlpha() ? 0.0f : 1.0f);
+
+        //  OpenGL setup for 3D Model
+        shaderProgramID = SampleUtils.createProgramFromShaderSrc(CubeShaders.CUBE_MESH_VERTEX_SHADER, CubeShaders.CUBE_MESH_FRAGMENT_SHADER);
+        vertexHandle = GLES20.glGetAttribLocation(shaderProgramID, "vertexPosition");
+        textureCoordHandle = GLES20.glGetAttribLocation(shaderProgramID, "vertexTexCoord");
+        normalHandle = GLES20.glGetAttribLocation(shaderProgramID, "vertexNormal");
+        mvpMatrixHandle = GLES20.glGetUniformLocation(shaderProgramID, "modelViewProjectionMatrix");
+        texSampler2DHandle = GLES20.glGetUniformLocation(shaderProgramID, "texSampler2D");
+
+        // OpenGL setup for Virtual Buttons
+        vbShaderProgramID = SampleUtils.createProgramFromShaderSrc(LineShaders.LINE_VERTEX_SHADER, LineShaders.LINE_FRAGMENT_SHADER);
+        mvpMatrixButtonsHandle = GLES20.glGetUniformLocation(vbShaderProgramID, "modelViewProjectionMatrix");
+        vbVertexHandle = GLES20.glGetAttribLocation(vbShaderProgramID, "vertexPosition");
+        lineOpacityHandle = GLES20.glGetUniformLocation(vbShaderProgramID, "opacity");
+        lineColorHandle = GLES20.glGetUniformLocation(vbShaderProgramID, "color");
+
+        // Hide the Loading Dialog
+        mActivity.loadingDialogHandler.sendEmptyMessage(LoadingDialogHandler.HIDE_LOADING_DIALOG);
+
     }
-    
-    
-    private void printUserData(Trackable trackable)
-    {
+
+    // --------------------------------------> Render Frame
+
+    // The render function.
+    private void renderFrame() {
+        // Clear color and depth buffer
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+
+        // Get the state from Vuforia and mark the beginning of a rendering
+        // section
+        State state = Renderer.getInstance().begin();
+
+        // Explicitly render the Video Background
+        Renderer.getInstance().drawVideoBackground();
+
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+
+        // We must detect if background reflection is active and adjust the
+        // culling direction.
+        // If the reflection is active, this means the post matrix has been
+        // reflected as well,
+        // therefore counter standard clockwise face culling will result in
+        // "inside out" models.
+        GLES20.glEnable(GLES20.GL_CULL_FACE);
+        GLES20.glCullFace(GLES20.GL_BACK);
+
+        if(Renderer.getInstance().getVideoBackgroundConfig().getReflection() == VIDEO_BACKGROUND_REFLECTION.VIDEO_BACKGROUND_REFLECTION_ON) {
+            GLES20.glFrontFace(GLES20.GL_CW); // Front camera
+        }
+        else {
+            GLES20.glFrontFace(GLES20.GL_CCW); // Back camera
+        }
+
+        // Did we find any trackables this frame?
+
+        if(state.getNumTrackableResults() > 0) {
+            Log.i(LOGTAG,"Num of Trackables : "+state.getNumTrackableResults());
+            for(int tIdx = 0; tIdx < state.getNumTrackableResults(); tIdx++) {
+                TrackableResult trackableResult = state.getTrackableResult(tIdx);
+
+                printUserData(trackableResult.getTrackable());
+
+                // Render Virtual Btns
+                renderVirtualBtns(trackableResult);
+
+                Texture thisTexture = mTextures.get(0);//mCurrentTextureIndex
+
+                // Render 3D model
+                render3DModel(trackableResult, thisTexture);
+            }
+        }
+
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+
+        Renderer.getInstance().end();
+    }
+
+    // ------>
+
+    private void renderVirtualBtns(TrackableResult trackableResult) {
+        float[] modelViewMatrix = Tool.convertPose2GLMatrix(trackableResult.getPose()).getData();
+
+        ImageTargetResult imageTargetResult = (ImageTargetResult) trackableResult;
+
+        Log.i(LOGTAG, "Num Of Btns : " + imageTargetResult.getNumVirtualButtons());
+
+        // Set transformations:
+        float[] modelViewProjection = new float[16];
+        Matrix.multiplyMM(modelViewProjection, 0, vuforiaAppSession.getProjectionMatrix().getData(), 0, modelViewMatrix, 0);
+
+        float vbVertices[] = new float[imageTargetResult.getNumVirtualButtons() * 24];
+        short vbCounter = 0;
+
+        // Iterate through this targets virtual buttons:
+        for(int i = 0; i < imageTargetResult.getNumVirtualButtons(); ++i) {
+            VirtualButtonResult buttonResult = imageTargetResult.getVirtualButtonResult(i);
+            VirtualButton button = buttonResult.getVirtualButton();
+            int buttonIndex = VirtualButtonsUtils.getIndexByName(button.getName());
+
+            // If the button is pressed, than use this texture:
+            if(buttonResult.isPressed()) {
+                mCurrentTextureIndex = buttonIndex + 1;
+                Log.i(LOGTAG, "Button Pressed " + mCurrentTextureIndex);
+            }
+
+            Rectangle vbRectangle[] = new Rectangle[2];
+            //            <VirtualButton name="moveLeft" enabled="true" rectangle="-108.68 -53.52 -75.75 -65.87"/>
+            //            <VirtualButton name="moveRight" enabled="true" rectangle="76.57 -53.52 109.50 -65.87"/>
+            vbRectangle[0] = new Rectangle(-108.68f, -53.52f, -75.75f, -65.87f);
+            vbRectangle[1] = new Rectangle(76.57f, -53.52f, 109.50f, -65.87f);
+
+            // We add the vertices to a common array in order to have one
+            // single
+            // draw call. This is more efficient than having multiple
+            // glDrawArray calls
+            vbVertices[vbCounter] = vbRectangle[buttonIndex].getLeftTopX();
+            vbVertices[vbCounter + 1] = vbRectangle[buttonIndex].getLeftTopY();
+            vbVertices[vbCounter + 2] = 0.0f;
+            vbVertices[vbCounter + 3] = vbRectangle[buttonIndex].getRightBottomX();
+            vbVertices[vbCounter + 4] = vbRectangle[buttonIndex].getLeftTopY();
+            vbVertices[vbCounter + 5] = 0.0f;
+            vbVertices[vbCounter + 6] = vbRectangle[buttonIndex].getRightBottomX();
+            vbVertices[vbCounter + 7] = vbRectangle[buttonIndex].getLeftTopY();
+            vbVertices[vbCounter + 8] = 0.0f;
+            vbVertices[vbCounter + 9] = vbRectangle[buttonIndex].getRightBottomX();
+            vbVertices[vbCounter + 10] = vbRectangle[buttonIndex].getRightBottomY();
+            vbVertices[vbCounter + 11] = 0.0f;
+            vbVertices[vbCounter + 12] = vbRectangle[buttonIndex].getRightBottomX();
+            vbVertices[vbCounter + 13] = vbRectangle[buttonIndex].getRightBottomY();
+            vbVertices[vbCounter + 14] = 0.0f;
+            vbVertices[vbCounter + 15] = vbRectangle[buttonIndex].getLeftTopX();
+            vbVertices[vbCounter + 16] = vbRectangle[buttonIndex].getRightBottomY();
+            vbVertices[vbCounter + 17] = 0.0f;
+            vbVertices[vbCounter + 18] = vbRectangle[buttonIndex].getLeftTopX();
+            vbVertices[vbCounter + 19] = vbRectangle[buttonIndex].getRightBottomY();
+            vbVertices[vbCounter + 20] = 0.0f;
+            vbVertices[vbCounter + 21] = vbRectangle[buttonIndex].getLeftTopX();
+            vbVertices[vbCounter + 22] = vbRectangle[buttonIndex].getLeftTopY();
+            vbVertices[vbCounter + 23] = 0.0f;
+            vbCounter += 24;
+
+        }
+
+        // We only render if there is something on the array
+        if(vbCounter > 0) {
+            // Render frame around button
+            GLES20.glUseProgram(vbShaderProgramID);
+            GLES20.glVertexAttribPointer(vbVertexHandle, 3, GLES20.GL_FLOAT, false, 0, VirtualButtonsUtils.fillBuffer(vbVertices));
+            GLES20.glEnableVertexAttribArray(vbVertexHandle);
+            GLES20.glUniform1f(lineOpacityHandle, 1.0f);
+            GLES20.glUniform3f(lineColorHandle, 1.0f, 1.0f, 1.0f);
+            GLES20.glUniformMatrix4fv(mvpMatrixButtonsHandle, 1, false, modelViewProjection, 0);
+            // We multiply by 8 because that's the number of vertices per
+            // button
+            // The reason is that GL_LINES considers only pairs. So some
+            // vertices
+            // must be repeated.
+            GLES20.glDrawArrays(GLES20.GL_LINES, 0, imageTargetResult.getNumVirtualButtons() * 8);
+
+            SampleUtils.checkGLError("VirtualButtons drawButton");
+
+            GLES20.glDisableVertexAttribArray(vbVertexHandle);
+        }
+    }
+
+
+    private void render3DModel(TrackableResult trackableResult, Texture thisTexture) {
+        float[] modelViewMatrix = Tool.convertPose2GLMatrix(trackableResult.getPose()).getData();
+        float[] modelViewProjectionScaled = new float[16];
+        float[] modelViewScaled = modelViewMatrix;
+
+        Trackable trackable = trackableResult.getTrackable();
+        ObjectTarget objectTarget = (ObjectTarget) trackable;
+        float[] objectSize = objectTarget.getSize().getData();
+
+        // Matrix
+        Matrix.scaleM(modelViewScaled, 0, objectSize[0] / 2, objectSize[1] / 2, 0);
+        Matrix.multiplyMM(modelViewProjectionScaled, 0, vuforiaAppSession.getProjectionMatrix().getData(), 0, modelViewScaled, 0);
+
+        // Render 3D model
+        GLES20.glUseProgram(shaderProgramID);
+        GLES20.glVertexAttribPointer(vertexHandle, 3, GLES20.GL_FLOAT, false, 0, mCubeObject.getVertices());
+        GLES20.glVertexAttribPointer(normalHandle, 3, GLES20.GL_FLOAT, false, 0, mCubeObject.getNormals());
+        GLES20.glVertexAttribPointer(textureCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mCubeObject.getTexCoords());
+
+        GLES20.glEnableVertexAttribArray(vertexHandle);
+        GLES20.glEnableVertexAttribArray(normalHandle);
+        GLES20.glEnableVertexAttribArray(textureCoordHandle);
+
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, thisTexture.mTextureID[0]);
+        GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, modelViewProjectionScaled, 0);
+        GLES20.glUniform1i(texSampler2DHandle, 0);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, mCubeObject.getNumObjectIndex(), GLES20.GL_UNSIGNED_SHORT, mCubeObject.getIndices());
+
+        GLES20.glDisableVertexAttribArray(vertexHandle);
+        GLES20.glDisableVertexAttribArray(normalHandle);
+        GLES20.glDisableVertexAttribArray(textureCoordHandle);
+        SampleUtils.checkGLError("VirtualButtons renderFrame");
+    }
+
+
+    // -------------------------------------->
+
+    private void printUserData(Trackable trackable) {
         String userData = (String) trackable.getUserData();
         Log.d(LOGTAG, "UserData:Retreived User Data	\"" + userData + "\"");
     }
-    
 
-    public void setTextures(Vector<Texture> textures)
-    {
+
+    public void setTextures(Vector<Texture> textures) {
         mTextures = textures;
-        
+
     }
 
 }

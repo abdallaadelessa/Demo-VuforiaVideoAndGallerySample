@@ -198,9 +198,10 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
                 .convertPose2GLMatrix(result.getPose());
             float[] modelViewMatrix = modelViewMatrix_Vuforia.getData();
             
-            int textureIndex =
-                    trackable.getName().equalsIgnoreCase("stones") ? 0 : 1;
-            textureIndex = trackable.getName().equalsIgnoreCase("tarmac") ? 2 : textureIndex;
+            int textureIndex = trackable.getName().equalsIgnoreCase("stones") ? 0
+                : 1;
+            textureIndex = trackable.getName().equalsIgnoreCase("tarmac") ? 2
+                : textureIndex;
             
             // deal with the modelview and projection matrices
             float[] modelViewProjection = new float[16];
@@ -239,7 +240,8 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
                 
                 // activate texture 0, bind it, and pass to shader
                 GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextures.get(textureIndex).mTextureID[0]);
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,
+                    mTextures.get(textureIndex).mTextureID[0]);
                 GLES20.glUniform1i(texSampler2DHandle, 0);
                 
                 // pass the model view matrix to the shader

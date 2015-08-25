@@ -106,10 +106,9 @@ public class ImageTargets extends Activity implements SampleApplicationControl,
         vuforiaAppSession = new SampleApplicationSession(this);
         
         startLoadingAnimation();
-        mDatasetStrings.add("test.xml");
         mDatasetStrings.add("StonesAndChips.xml");
         mDatasetStrings.add("Tarmac.xml");
-
+        
         vuforiaAppSession
             .initAR(this, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         
@@ -324,8 +323,6 @@ public class ImageTargets extends Activity implements SampleApplicationControl,
     @Override
     public boolean doLoadTrackersData()
     {
-        //TODO Tak the first dataset
-        mCurrentDatasetSelectionIndex = 0 ;
         TrackerManager tManager = TrackerManager.getInstance();
         ObjectTracker objectTracker = (ObjectTracker) tManager
             .getTracker(ObjectTracker.getClassType());
@@ -337,8 +334,7 @@ public class ImageTargets extends Activity implements SampleApplicationControl,
         
         if (mCurrentDataset == null)
             return false;
-
-
+        
         if (!mCurrentDataset.load(
             mDatasetStrings.get(mCurrentDatasetSelectionIndex),
             STORAGE_TYPE.STORAGE_APPRESOURCE))
@@ -641,10 +637,10 @@ public class ImageTargets extends Activity implements SampleApplicationControl,
             .addGroup(getString(R.string.menu_datasets), true);
         mStartDatasetsIndex = CMD_DATASET_START_INDEX;
         mDatasetsNumber = mDatasetStrings.size();
-
+        
         group.addRadioItem("Stones & Chips", mStartDatasetsIndex, true);
         group.addRadioItem("Tarmac", mStartDatasetsIndex + 1, false);
-
+        
         mSampleAppMenu.attachMenu();
     }
     
