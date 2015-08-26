@@ -348,19 +348,19 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
                         }
                         break;
                     case VirtualButtonsUtils.MOVE_RIGHT:
-                        if(mCurrentTextureIndex < mTextures.size()-1) {
+                        if(mCurrentTextureIndex < mTextures.size() - 1) {
                             mCurrentTextureIndex++;
                         }
                         break;
                 }
                 Log.i(LOGTAG, "Button Pressed " + btnName);
-//                mActivity.runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        Log.i(LOGTAG, "Button Pressed " + mCurrentTextureIndex);
-//                        Toast.makeText(mActivity, "Button Pressed " + mCurrentTextureIndex, 1000).show();
-//                    }
-//                });
+                //                mActivity.runOnUiThread(new Runnable() {
+                //                    @Override
+                //                    public void run() {
+                //                        Log.i(LOGTAG, "Button Pressed " + mCurrentTextureIndex);
+                //                        Toast.makeText(mActivity, "Button Pressed " + mCurrentTextureIndex, 1000).show();
+                //                    }
+                //                });
             }
             mPreviousTimeStamp = currentTimeStamp;
         }
