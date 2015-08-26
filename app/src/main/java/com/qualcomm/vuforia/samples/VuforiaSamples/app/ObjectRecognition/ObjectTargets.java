@@ -223,29 +223,25 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
         if(mCurrentDataset == null) return false;
 
         if(!mCurrentDataset.load("VirtualButtons/Wood.xml", STORAGE_TYPE.STORAGE_APPRESOURCE))
-//       if(!mCurrentDataset.load("test.xml", STORAGE_TYPE.STORAGE_APPRESOURCE))
             return false;
+        // if(!mCurrentDataset.load("test.xml", STORAGE_TYPE.STORAGE_APPRESOURCE)) return false;
 
         TrackableSource source = new TrackableSource();
         mCurrentDataset.createTrackable(source);
 
         if(!objectTracker.activateDataSet(mCurrentDataset)) return false;
 
-        //Note: Disable Extended Tracking
-        //        int numTrackables = mCurrentDataset.getNumTrackables();
-        //        for (int count = 0; count < numTrackables; count++)
-        //        {
-        //            Trackable trackable = mCurrentDataset.getTrackable(count);
-        //            if(isExtendedTrackingActive())
-        //            {
-        //                trackable.startExtendedTracking();
-        //            }
-        //
-        //            String name = "Current Dataset : " + trackable.getName();
-        //            trackable.setUserData(name);
-        //            Log.d(LOGTAG, "UserData:Set the following user data "
-        //                    + (String) trackable.getUserData());
-        //        }
+        int numTrackables = mCurrentDataset.getNumTrackables();
+        for(int count = 0; count < numTrackables; count++) {
+            Trackable trackable = mCurrentDataset.getTrackable(count);
+            if(isExtendedTrackingActive()) {
+                trackable.startExtendedTracking();
+            }
+
+            String name = "Current Dataset : " + trackable.getName();
+            trackable.setUserData(name);
+            Log.d(LOGTAG, "UserData:Set the following user data " + (String) trackable.getUserData());
+        }
 
         return true;
     }
@@ -389,11 +385,11 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
     // We want to load specific textures from the APK, which we will later use
     // for rendering.
     private void loadTextures() {
-//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/1.png", getAssets()));
-//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/2.png", getAssets()));
-//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/3.png", getAssets()));
-//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/4.png", getAssets()));
-//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/5.png", getAssets()));
+        //        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/1.png", getAssets()));
+        //        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/2.png", getAssets()));
+        //        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/3.png", getAssets()));
+        //        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/4.png", getAssets()));
+        //        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/5.png", getAssets()));
         mTextures.add(Texture.loadTextureFromApk("wallpapers/1.jpg", getAssets()));
         mTextures.add(Texture.loadTextureFromApk("wallpapers/2.jpg", getAssets()));
         mTextures.add(Texture.loadTextureFromApk("wallpapers/3.jpg", getAssets()));

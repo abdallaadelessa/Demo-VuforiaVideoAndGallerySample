@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<QCARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="qcar_config.xsd">
-  <Tracking>
-    <ImageTarget name="wallpaper" size="247 173" >
-      <VirtualButton name="moveLeft" sensitivity="HIGH" enabled="true" rectangle="-108.68 -53.52 -75.75 -65.87"/>
-      <VirtualButton name="moveRight" enabled="true" rectangle="76.57 -53.52 109.50 -65.87"/>
-    </ImageTarget>
-    <ImageTarget name="obj3" size="26.000000 26.000000" />
-    <ImageTarget name="obj2" size="30.000000 22.538727" />
-    <ImageTarget name="obj1" size="39.000000 15.427133" />
-  </Tracking>
+<QCARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:noNamespaceSchemaLocation="qcar_config.xsd">
+    <Tracking>
+        <ImageTarget name="wallpaper" size="247 173">
+            <VirtualButton name="moveLeft" enabled="true" rectangle="-108.68 -53.52 -75.75 -65.87"/>
+            <VirtualButton name="moveRight" enabled="true" rectangle="76.57 -53.52 109.50 -65.87"/>
+        </ImageTarget>
+        <ImageTarget name="obj3" size="26.000000 26.000000">
+            <VirtualButton name="moveLeft" enabled="true" rectangle="-108.68 -53.52 -75.75 -65.87"/>
+            <VirtualButton name="moveRight" enabled="true" rectangle="76.57 -53.52 109.50 -65.87"/>
+        </ImageTarget>
+        <ImageTarget name="obj2" size="193 145">
+            <VirtualButton name="moveLeft" enabled="true" rectangle="-108.68 -53.52 -75.75 -65.87"/>
+            <VirtualButton name="moveRight" enabled="true" rectangle="76.57 -53.52 109.50 -65.87"/>
+        </ImageTarget>
+        <ImageTarget name="obj1" size="39.000000 15.427133">
+            <VirtualButton name="moveLeft" enabled="true" rectangle="-108.68 -53.52 -75.75 -65.87"/>
+            <VirtualButton name="moveRight" enabled="true" rectangle="76.57 -53.52 109.50 -65.87"/>
+        </ImageTarget>
+    </Tracking>
 </QCARConfig>
