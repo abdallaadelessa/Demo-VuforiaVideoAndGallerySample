@@ -415,50 +415,6 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
         mRenderer.setTextures(mTextures);
         mGlView.setRenderer(mRenderer);
     }
-
-    // ----------------------------> Button Utils
-
-    boolean toggleVirtualButton(ImageTarget imageTarget, String name, float left, float top, float right, float bottom) {
-        Log.d(LOGTAG, "toggleVirtualButton");
-
-        boolean buttonToggleSuccess = false;
-
-        VirtualButton virtualButton = imageTarget.getVirtualButton(name);
-        if(virtualButton != null) {
-            Log.d(LOGTAG, "Destroying Virtual Button> " + name);
-            buttonToggleSuccess = imageTarget.destroyVirtualButton(virtualButton);
-        }
-        else {
-            Log.d(LOGTAG, "Creating Virtual Button> " + name);
-            Rectangle vbRectangle = new Rectangle(left, top, right, bottom);
-            VirtualButton virtualButton2 = imageTarget.createVirtualButton(name, vbRectangle);
-
-            if(virtualButton2 != null) {
-                // This is just a showcase. The values used here a set by
-                // default on Virtual Button creation
-                virtualButton2.setEnabled(true);
-                virtualButton2.setSensitivity(VirtualButton.SENSITIVITY.MEDIUM);
-                buttonToggleSuccess = true;
-            }
-        }
-
-        return buttonToggleSuccess;
-    }
-
-    private void addButtonToToggle(int virtualButtonIdx) {
-        Log.d(LOGTAG, "addButtonToToggle");
-        switch(virtualButtonIdx) {
-            case 0:
-                buttonMask |= VirtualButtonsUtils.BUTTON_1;
-                break;
-
-            case 1:
-                buttonMask |= VirtualButtonsUtils.BUTTON_2;
-                break;
-        }
-        updateBtns = true;
-    }
-
     // ----------------------------> Touch Listener
 
     @Override

@@ -7,11 +7,9 @@ import java.nio.ByteOrder;
 /**
  * Created by abdallah on 25/08/15.
  */
-public class VirtualButtonsUtils {
+public class ObjectTargetUtils {
 
     // Enumeration for masking button indices into single integer:
-    public static final int BUTTON_1 = 1;
-    public static final int BUTTON_2 = 2;
     public static final String MOVE_LEFT = "moveLeft";
     public static final String MOVE_RIGHT = "moveRight";
     public static String virtualButtonColors[] = {MOVE_LEFT, MOVE_RIGHT};

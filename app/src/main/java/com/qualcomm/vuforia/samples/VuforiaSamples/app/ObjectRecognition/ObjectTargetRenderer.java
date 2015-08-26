@@ -11,7 +11,6 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.qualcomm.vuforia.ImageTargetResult;
 import com.qualcomm.vuforia.ObjectTarget;
@@ -233,7 +232,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
             String btnName = button.getName();
             // Run through button name array to find button index
             for(int j = 0; j < numVirtualButtons; ++j) {
-                if(btnName.compareTo(VirtualButtonsUtils.virtualButtonColors[j]) == 0) {
+                if(btnName.compareTo(ObjectTargetUtils.virtualButtonColors[j]) == 0) {
                     buttonIndex = j;
                     break;
                 }
@@ -281,7 +280,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
         if(vbCounter > 0) {
             // Render frame around button
             GLES20.glUseProgram(vbShaderProgramID);
-            GLES20.glVertexAttribPointer(vbVertexHandle, 3, GLES20.GL_FLOAT, false, 0, VirtualButtonsUtils.fillBuffer(vbVertices));
+            GLES20.glVertexAttribPointer(vbVertexHandle, 3, GLES20.GL_FLOAT, false, 0, ObjectTargetUtils.fillBuffer(vbVertices));
             GLES20.glEnableVertexAttribArray(vbVertexHandle);
             GLES20.glUniform1f(lineOpacityHandle, 1.0f);
             GLES20.glUniform3f(lineColorHandle, 1.0f, 1.0f, 1.0f);
@@ -342,12 +341,12 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
             long currentTimeStamp = System.currentTimeMillis();
             if(currentTimeStamp - mPreviousTimeStamp > CLICK_THREHOLD_TIME_IN_MS) {
                 switch(btnName) {
-                    case VirtualButtonsUtils.MOVE_LEFT:
+                    case ObjectTargetUtils.MOVE_LEFT:
                         if(mCurrentTextureIndex > 0) {
                             mCurrentTextureIndex--;
                         }
                         break;
-                    case VirtualButtonsUtils.MOVE_RIGHT:
+                    case ObjectTargetUtils.MOVE_RIGHT:
                         if(mCurrentTextureIndex < mTextures.size() - 1) {
                             mCurrentTextureIndex++;
                         }
