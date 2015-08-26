@@ -389,11 +389,16 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
     // We want to load specific textures from the APK, which we will later use
     // for rendering.
     private void loadTextures() {
-        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/1.png", getAssets()));
-        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/2.png", getAssets()));
-        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/3.png", getAssets()));
-        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/4.png", getAssets()));
-        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/5.png", getAssets()));
+//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/1.png", getAssets()));
+//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/2.png", getAssets()));
+//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/3.png", getAssets()));
+//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/4.png", getAssets()));
+//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/5.png", getAssets()));
+        mTextures.add(Texture.loadTextureFromApk("wallpapers/1.jpg", getAssets()));
+        mTextures.add(Texture.loadTextureFromApk("wallpapers/2.jpg", getAssets()));
+        mTextures.add(Texture.loadTextureFromApk("wallpapers/3.jpg", getAssets()));
+        mTextures.add(Texture.loadTextureFromApk("wallpapers/4.jpg", getAssets()));
+        mTextures.add(Texture.loadTextureFromApk("wallpapers/5.jpg", getAssets()));
     }
 
     // Initializes AR application components.
