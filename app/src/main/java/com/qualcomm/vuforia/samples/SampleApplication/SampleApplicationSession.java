@@ -28,7 +28,7 @@ import com.qualcomm.vuforia.VideoBackgroundConfig;
 import com.qualcomm.vuforia.VideoMode;
 import com.qualcomm.vuforia.Vuforia;
 import com.qualcomm.vuforia.Vuforia.UpdateCallbackInterface;
-import com.qualcomm.vuforia.samples.VuforiaSamples.R;
+import com.qualcomm.vuforia.samples.R;
 
 
 public class SampleApplicationSession implements UpdateCallbackInterface {

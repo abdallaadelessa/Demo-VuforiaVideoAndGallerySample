@@ -26,7 +26,7 @@ import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 
-import com.qualcomm.vuforia.samples.VuforiaSamples.R;
+import com.qualcomm.vuforia.samples.R;
 
 
 public class SampleAppMenuGroup

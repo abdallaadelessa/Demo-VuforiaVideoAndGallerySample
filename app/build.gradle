@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.qualcomm.vuforia.samples.VuforiaSamples"
+        applicationId "com.qualcomm.vuforia.samples"
         minSdkVersion 14
         targetSdkVersion 22
         versionCode 1

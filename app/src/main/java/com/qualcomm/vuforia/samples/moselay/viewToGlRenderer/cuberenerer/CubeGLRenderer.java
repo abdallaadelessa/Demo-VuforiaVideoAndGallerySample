@@ -9,7 +9,7 @@ import android.os.SystemClock;
 import com.qualcomm.vuforia.ObjectTarget;
 import com.qualcomm.vuforia.samples.SampleApplication.SampleApplicationSession;
 import com.qualcomm.vuforia.samples.SampleApplication.utils.LoadingDialogHandler;
-import com.qualcomm.vuforia.samples.VuforiaSamples.R;
+import com.qualcomm.vuforia.samples.R;
 import com.qualcomm.vuforia.samples.VuforiaSamples.app.ObjectRecognition.ObjectTargets;
 import com.qualcomm.vuforia.samples.moselay.viewToGlRenderer.ViewToGLRenderer;
 

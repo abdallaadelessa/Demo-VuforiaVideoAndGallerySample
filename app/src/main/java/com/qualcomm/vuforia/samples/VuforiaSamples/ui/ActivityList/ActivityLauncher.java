@@ -17,13 +17,13 @@ import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import com.qualcomm.vuforia.samples.VuforiaSamples.R;
+import com.qualcomm.vuforia.samples.R;
 
 
 // This activity starts activities which demonstrate the Vuforia features
 public class ActivityLauncher extends ListActivity {
 
-    private String mActivities[] = {"Image Targets", "Cylinder Targets", "Multi Targets", "User Defined Targets", "Object Reco", "Cloud Reco", "Text Reco", "Frame Markers", "Virtual Buttons"};
+    private String mActivities[] = {"Image Targets", "Cylinder Targets", "Multi Targets", "User Defined Targets", "Object Reco", "Cloud Reco", "Text Reco", "Frame Markers", "Virtual Buttons", "VideoPlayback"};
 
 
     @Override
@@ -47,40 +47,44 @@ public class ActivityLauncher extends ListActivity {
 
         switch(position) {
             case 0:
-                intent.putExtra("ACTIVITY_TO_LAUNCH", "app.ImageTargets.ImageTargets");
+                intent.putExtra("ACTIVITY_TO_LAUNCH", "VuforiaSamples.app.ImageTargets.ImageTargets");
                 intent.putExtra("ABOUT_TEXT", "ImageTargets/IT_about.html");
                 break;
             case 1:
-                intent.putExtra("ACTIVITY_TO_LAUNCH", "app.CylinderTargets.CylinderTargets");
+                intent.putExtra("ACTIVITY_TO_LAUNCH", "VuforiaSamples.app.CylinderTargets.CylinderTargets");
                 intent.putExtra("ABOUT_TEXT", "CylinderTargets/CY_about.html");
                 break;
             case 2:
-                intent.putExtra("ACTIVITY_TO_LAUNCH", "app.MultiTargets.MultiTargets");
+                intent.putExtra("ACTIVITY_TO_LAUNCH", "VuforiaSamples.app.MultiTargets.MultiTargets");
                 intent.putExtra("ABOUT_TEXT", "MultiTargets/MT_about.html");
                 break;
             case 3:
-                intent.putExtra("ACTIVITY_TO_LAUNCH", "app.UserDefinedTargets.UserDefinedTargets");
+                intent.putExtra("ACTIVITY_TO_LAUNCH", "VuforiaSamples.app.UserDefinedTargets.UserDefinedTargets");
                 intent.putExtra("ABOUT_TEXT", "UserDefinedTargets/UD_about.html");
                 break;
             case 4:
-                intent.putExtra("ACTIVITY_TO_LAUNCH", "app.ObjectRecognition.ObjectTargets");
+                intent.putExtra("ACTIVITY_TO_LAUNCH", "VuforiaSamples.app.ObjectRecognition.ObjectTargets");
                 intent.putExtra("ABOUT_TEXT", "ObjectRecognition/OR_about.html");
                 break;
             case 5:
-                intent.putExtra("ACTIVITY_TO_LAUNCH", "app.CloudRecognition.CloudReco");
+                intent.putExtra("ACTIVITY_TO_LAUNCH", "VuforiaSamples.app.CloudRecognition.CloudReco");
                 intent.putExtra("ABOUT_TEXT", "CloudReco/CR_about.html");
                 break;
             case 6:
-                intent.putExtra("ACTIVITY_TO_LAUNCH", "app.TextRecognition.TextReco");
+                intent.putExtra("ACTIVITY_TO_LAUNCH", "VuforiaSamples.app.TextRecognition.TextReco");
                 intent.putExtra("ABOUT_TEXT", "TextReco/TR_about.html");
                 break;
             case 7:
-                intent.putExtra("ACTIVITY_TO_LAUNCH", "app.FrameMarkers.FrameMarkers");
+                intent.putExtra("ACTIVITY_TO_LAUNCH", "VuforiaSamples.app.FrameMarkers.FrameMarkers");
                 intent.putExtra("ABOUT_TEXT", "FrameMarkers/FM_about.html");
                 break;
             case 8:
-                intent.putExtra("ACTIVITY_TO_LAUNCH", "app.VirtualButtons.VirtualButtons");
+                intent.putExtra("ACTIVITY_TO_LAUNCH", "VuforiaSamples.app.VirtualButtons.VirtualButtons");
                 intent.putExtra("ABOUT_TEXT", "VirtualButtons/VB_about.html");
+                break;
+            case 9:
+                intent.putExtra("ACTIVITY_TO_LAUNCH", "VideoPlayback.app.VideoPlayback.VideoPlayback");
+                intent.putExtra("ABOUT_TEXT", "VideoPlayback/VP_about.html");
                 break;
         }
 
