@@ -390,9 +390,10 @@ public class ObjectTargets extends Activity implements SampleApplicationControl,
     // for rendering.
     private void loadTextures() {
         mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/1.png", getAssets()));
-//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/2.png", getAssets()));
-//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/3.png", getAssets()));
-//        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/4.png", getAssets()));
+        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/2.png", getAssets()));
+        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/3.png", getAssets()));
+        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/4.png", getAssets()));
+        mTextures.add(Texture.loadTextureFromApk("ObjectRecognition/5.png", getAssets()));
     }
 
     // Initializes AR application components.

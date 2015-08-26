@@ -43,6 +43,7 @@ import javax.microedition.khronos.opengles.GL10;
 // The renderer class for the ImageTargets sample. 
 public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
     private static final String LOGTAG = "ObjectTargetRenderer";
+    public static final int CLICK_THREHOLD_TIME_IN_MS = 200;
 
     private SampleApplicationSession vuforiaAppSession;
     private ObjectTargets mActivity;
@@ -64,8 +65,9 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
     private int lineOpacityHandle = 0;
     private int lineColorHandle = 0;
     private int mvpMatrixButtonsHandle = 0;
+    // --->
     private int mCurrentTextureIndex = 0;
-    private int mPreviousTextureIndex;
+    private long mPreviousTimeStamp = 0;
 
     // -------------------------------------->
 
@@ -185,7 +187,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
         // Did we find any trackables this frame?
 
         if(state.getNumTrackableResults() > 0) {
-            Log.i(LOGTAG, "Num of Trackables : " + state.getNumTrackableResults());
+            // Log.i(LOGTAG, "Num of Trackables : " + state.getNumTrackableResults());
             for(int tIdx = 0; tIdx < state.getNumTrackableResults(); tIdx++) {
                 TrackableResult trackableResult = state.getTrackableResult(tIdx);
 
@@ -194,17 +196,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
                 // Render Virtual Btns
                 renderVirtualBtns(trackableResult);
 
-                Texture thisTexture = mTextures.get(0);//mCurrentTextureIndex
-
-                if(mPreviousTextureIndex != mCurrentTextureIndex) {
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(mActivity, "Button Pressed " + mCurrentTextureIndex, 1000).show();
-                        }
-                    });
-                }
-                mPreviousTextureIndex = mCurrentTextureIndex;
+                Texture thisTexture = mTextures.get(mCurrentTextureIndex);
 
                 // Render 3D model
                 render3DModel(trackableResult, thisTexture);
@@ -227,7 +219,7 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
         ImageTargetResult imageTargetResult = (ImageTargetResult) trackableResult;
 
         int numVirtualButtons = imageTargetResult.getNumVirtualButtons();
-        Log.i(LOGTAG, "Num Of Btns : " + numVirtualButtons);
+        // Log.i(LOGTAG, "Num Of Btns : " + numVirtualButtons);
 
         float vbVertices[] = new float[numVirtualButtons * 24];
         short vbCounter = 0;
@@ -238,24 +230,17 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
             VirtualButton button = buttonResult.getVirtualButton();
 
             int buttonIndex = 0;
+            String btnName = button.getName();
             // Run through button name array to find button index
             for(int j = 0; j < numVirtualButtons; ++j) {
-                if(button.getName().compareTo(VirtualButtonsUtils.virtualButtonColors[j]) == 0) {
+                if(btnName.compareTo(VirtualButtonsUtils.virtualButtonColors[j]) == 0) {
                     buttonIndex = j;
                     break;
                 }
             }
 
             // If the button is pressed, than use this texture:
-            if(buttonResult.isPressed()) {
-                mCurrentTextureIndex = buttonIndex + 1;
-            }
-
-            // If the button is pressed, than use this texture:
-            if(buttonResult.isPressed()) {
-                mCurrentTextureIndex = buttonIndex + 1;
-                Log.i(LOGTAG, "Button Pressed " + mCurrentTextureIndex);
-            }
+            handleClick(buttonResult, btnName, buttonIndex);
 
             Rectangle vbRectangle = (Rectangle) button.getArea();
 
@@ -314,7 +299,6 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-
     private void render3DModel(TrackableResult trackableResult, Texture thisTexture) {
         float[] modelViewMatrix = Tool.convertPose2GLMatrix(trackableResult.getPose()).getData();
 
@@ -352,9 +336,39 @@ public class ObjectTargetRenderer implements GLSurfaceView.Renderer {
 
     // -------------------------------------->
 
+
+    private void handleClick(VirtualButtonResult buttonResult, String btnName, int buttonIndex) {
+        if(buttonResult.isPressed()) {
+            long currentTimeStamp = System.currentTimeMillis();
+            if(currentTimeStamp - mPreviousTimeStamp > CLICK_THREHOLD_TIME_IN_MS) {
+                switch(btnName) {
+                    case VirtualButtonsUtils.MOVE_LEFT:
+                        if(mCurrentTextureIndex > 0) {
+                            mCurrentTextureIndex--;
+                        }
+                        break;
+                    case VirtualButtonsUtils.MOVE_RIGHT:
+                        if(mCurrentTextureIndex < mTextures.size()-1) {
+                            mCurrentTextureIndex++;
+                        }
+                        break;
+                }
+                Log.i(LOGTAG, "Button Pressed " + btnName);
+//                mActivity.runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        Log.i(LOGTAG, "Button Pressed " + mCurrentTextureIndex);
+//                        Toast.makeText(mActivity, "Button Pressed " + mCurrentTextureIndex, 1000).show();
+//                    }
+//                });
+            }
+            mPreviousTimeStamp = currentTimeStamp;
+        }
+    }
+
     private void printUserData(Trackable trackable) {
         String userData = (String) trackable.getUserData();
-        Log.d(LOGTAG, "UserData:Retreived User Data	\"" + userData + "\"");
+        // Log.d(LOGTAG, "UserData:Retreived User Data	\"" + userData + "\"");
     }
 
 
